@@ -1,0 +1,3286 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marst AI Web Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script>
+        // ★ EmailJS 설정 — 아래 3개 값을 본인 것으로 교체하세요
+        const EMAILJS_PUBLIC_KEY  = 'qbu8vWJ1ubxahJRBF';   // EmailJS 대시보드 > Account
+        const EMAILJS_SERVICE_ID  = 'service_tt6rh8n';   // EmailJS 대시보드 > Email Services
+        const EMAILJS_TEMPLATE_APPLY = 'template_7uwl9rq'; // EmailJS 대시보드 > Email Templates
+        window.addEventListener('load', () => emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY }));
+    </script>
+    <style>
+        :root {
+            --blue: #3b82f6;
+            --purple: #8b5cf6;
+            --cyan: #06b6d4;
+            --pink: #ec4899;
+            --bg: #030712;
+            --bg2: #0a0f1e;
+            --surface: #0d1526;
+            --border: rgba(59,130,246,0.12);
+            --text: #e2e8f0;
+            --muted: #64748b;
+            --font-display: 'Syne', sans-serif;
+            --font-body: 'Space Grotesk', sans-serif;
+            --font-mono: 'DM Mono', monospace;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-body);
+            overflow-x: hidden;
+            cursor: none;
+        }
+
+        /* CUSTOM CURSOR */
+        .cursor {
+            width: 10px; height: 10px;
+            background: var(--blue);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 99999;
+            transition: transform 0.1s;
+            mix-blend-mode: screen;
+        }
+        .cursor-ring {
+            width: 36px; height: 36px;
+            border: 1.5px solid rgba(59,130,246,0.5);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 99998;
+            transition: all 0.15s ease;
+            mix-blend-mode: screen;
+        }
+
+        /* NOISE OVERLAY */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.4;
+        }
+
+        /* NAV */
+        nav {
+            position: fixed;
+            top: 0; width: 100%;
+            z-index: 1000;
+            padding: 20px 48px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.4s;
+        }
+        nav.scrolled {
+            background: rgba(3,7,18,0.85);
+            backdrop-filter: blur(24px);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 48px;
+        }
+        .nav-logo {
+            font-family: var(--font-display);
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: white;
+        }
+        .nav-logo span { color: var(--blue); }
+        .nav-links {
+            display: flex;
+            gap: 36px;
+            list-style: none;
+        }
+        .nav-links a {
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--muted);
+            text-decoration: none;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            transition: color 0.2s;
+            position: relative;
+        }
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px; left: 0;
+            width: 0; height: 1px;
+            background: var(--blue);
+            transition: width 0.3s;
+        }
+        .nav-links a:hover { color: white; }
+        .nav-links a:hover::after { width: 100%; }
+
+        .lang-switcher {
+            display: flex;
+            gap: 2px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 4px;
+        }
+        .lang-btn {
+            font-size: 0.68rem;
+            font-weight: 600;
+            font-family: var(--font-mono);
+            padding: 5px 10px;
+            border-radius: 5px;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.05em;
+        }
+        .lang-btn.active {
+            background: var(--blue);
+            color: white;
+        }
+        .lang-btn:not(.active):hover { color: white; }
+
+        /* PAGES */
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* ============= HOME PAGE ============= */
+
+        /* HERO */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 120px 48px 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 40%, transparent 100%);
+        }
+
+        .hero-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+        }
+        .orb1 { width: 600px; height: 600px; background: radial-gradient(circle, rgba(59,130,246,0.15), transparent); top: -200px; right: -100px; }
+        .orb2 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(139,92,246,0.12), transparent); bottom: -150px; left: -100px; }
+        .orb3 { width: 300px; height: 300px; background: radial-gradient(circle, rgba(6,182,212,0.1), transparent); top: 40%; left: 50%; transform: translate(-50%,-50%); }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            background: rgba(59,130,246,0.08);
+            border: 1px solid rgba(59,130,246,0.2);
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--blue);
+            letter-spacing: 0.05em;
+            margin-bottom: 40px;
+            animation: fadeUp 0.8s ease both;
+        }
+        .hero-badge::before { content: ''; width: 6px; height: 6px; background: var(--cyan); border-radius: 50%; animation: pulse 2s infinite; }
+
+        @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(1.4); } }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+        .hero h1 {
+            font-family: var(--font-display);
+            font-size: clamp(3.5rem, 10vw, 9rem);
+            font-weight: 800;
+            line-height: 0.92;
+            letter-spacing: -0.03em;
+            color: white;
+            animation: fadeUp 0.8s 0.1s ease both;
+            margin-bottom: 32px;
+        }
+        .hero h1 .line2 {
+            display: block;
+            background: linear-gradient(135deg, var(--blue) 0%, var(--purple) 50%, var(--cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-desc {
+            font-size: 1.15rem;
+            color: var(--muted);
+            max-width: 600px;
+            line-height: 1.7;
+            animation: fadeUp 0.8s 0.2s ease both;
+            margin-bottom: 48px;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: fadeUp 0.8s 0.3s ease both;
+        }
+
+        .btn-primary {
+            padding: 14px 32px;
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-family: var(--font-body);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--cyan), var(--blue));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .btn-primary:hover::before { opacity: 1; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(59,130,246,0.35); }
+        .btn-primary span { position: relative; z-index: 1; }
+
+        .btn-ghost {
+            padding: 13px 32px;
+            background: transparent;
+            color: var(--text);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 10px;
+            font-family: var(--font-body);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .btn-ghost:hover { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.04); }
+
+        .hero-scroll {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 0.7rem;
+            font-family: var(--font-mono);
+            letter-spacing: 0.1em;
+            animation: fadeIn 1s 1s ease both;
+        }
+        .scroll-line {
+            width: 1px; height: 48px;
+            background: linear-gradient(to bottom, var(--blue), transparent);
+            animation: scrollLine 2s infinite;
+        }
+        @keyframes scrollLine {
+            0% { transform: scaleY(0); transform-origin: top; }
+            50% { transform: scaleY(1); transform-origin: top; }
+            51% { transform: scaleY(1); transform-origin: bottom; }
+            100% { transform: scaleY(0); transform-origin: bottom; }
+        }
+
+        /* STATS */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+        .stat-item {
+            background: var(--bg);
+            padding: 48px 40px;
+            text-align: center;
+            transition: background 0.3s;
+        }
+        .stat-item:hover { background: var(--surface); }
+        .stat-num {
+            font-family: var(--font-display);
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--blue), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+        .stat-label {
+            font-size: 0.78rem;
+            color: var(--muted);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        /* ABOUT / EXPERTISE */
+        section { padding: 120px 48px; max-width: 1280px; margin: 0 auto; }
+
+        .section-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--blue);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+        .section-tag::before { content: '//'; opacity: 0.5; }
+
+        .section-title {
+            font-family: var(--font-display);
+            font-size: clamp(2.2rem, 5vw, 4rem);
+            font-weight: 800;
+            line-height: 1.05;
+            letter-spacing: -0.02em;
+            color: white;
+            margin-bottom: 16px;
+        }
+        .section-sub {
+            font-size: 1rem;
+            color: var(--muted);
+            max-width: 520px;
+            line-height: 1.7;
+        }
+
+        .expertise-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 60px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            transition: all 0.4s;
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--blue), transparent);
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        .card:hover {
+            border-color: rgba(59,130,246,0.3);
+            transform: translateY(-6px);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+        }
+        .card:hover::before { opacity: 1; }
+
+        .card-icon {
+            width: 52px; height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin-bottom: 28px;
+        }
+        .icon-blue { background: rgba(59,130,246,0.1); color: var(--blue); }
+        .icon-purple { background: rgba(139,92,246,0.1); color: var(--purple); }
+        .icon-pink { background: rgba(236,72,153,0.1); color: var(--pink); }
+        .icon-cyan { background: rgba(6,182,212,0.1); color: var(--cyan); }
+
+        .card h3 {
+            font-family: var(--font-display);
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 12px;
+        }
+        .card p { font-size: 0.88rem; color: var(--muted); line-height: 1.7; }
+
+        /* STACK */
+        .stack-section {
+            background: var(--bg2);
+            padding: 120px 0;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+        .stack-section > div { max-width: 1280px; margin: 0 auto; padding: 0 48px; }
+
+        .stack-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            margin-top: 60px;
+        }
+
+        .stack-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px 20px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: default;
+        }
+        .stack-item:hover {
+            border-color: rgba(59,130,246,0.3);
+            background: rgba(59,130,246,0.04);
+            transform: translateY(-4px);
+        }
+        .stack-item i { font-size: 2.4rem; display: block; margin-bottom: 16px; }
+        .stack-item p { font-size: 0.75rem; font-weight: 500; color: var(--muted); letter-spacing: 0.04em; }
+
+        /* PROJECTS */
+        .projects-section { padding: 120px 48px; max-width: 1280px; margin: 0 auto; }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-top: 60px;
+        }
+
+        .project-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            transition: all 0.4s;
+            cursor: pointer;
+        }
+        .project-card:hover {
+            border-color: rgba(59,130,246,0.3);
+            transform: translateY(-6px);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+        }
+        .project-card.featured {
+            grid-column: span 2;
+        }
+
+        .project-thumb {
+            height: 240px;
+            background: var(--bg2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .project-card.featured .project-thumb { height: 320px; }
+
+        .project-thumb-inner {
+            width: 100%; height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            color: rgba(255,255,255,0.06);
+            transition: all 0.5s;
+            position: relative;
+        }
+        .project-card:hover .project-thumb-inner { transform: scale(1.05); }
+
+        /* ===== CSS MOCKUP THUMBNAILS ===== */
+        .thumb-game { background:linear-gradient(135deg,#0a0f1e,#0d1526); position:relative; overflow:hidden; }
+        .thumb-game::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 60% 40% at 50% 50%,rgba(139,92,246,0.12),transparent),radial-gradient(circle at 20% 80%,rgba(236,72,153,0.08),transparent 40%); }
+        .game-ui-wrap { position:absolute; inset:0; display:flex; flex-direction:column; padding:18px; gap:8px; }
+        .game-topbar { display:flex; justify-content:space-between; align-items:flex-start; }
+        .game-hp-bar { display:flex; flex-direction:column; gap:3px; }
+        .game-hp-label { font-family:var(--font-mono); font-size:0.5rem; color:#ef4444; letter-spacing:0.1em; }
+        .game-hp-track { width:90px; height:5px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden; border:1px solid rgba(239,68,68,0.3); }
+        .game-hp-fill { height:100%; width:62%; background:linear-gradient(90deg,#ef4444,#f97316); border-radius:3px; animation:hpFlicker 3s ease-in-out infinite; }
+        @keyframes hpFlicker { 0%,100%{width:62%;opacity:1;} 40%{width:58%;opacity:0.85;} 70%{width:60%;} }
+        .game-minimap { width:52px; height:52px; border:1px solid rgba(139,92,246,0.4); border-radius:5px; background:rgba(139,92,246,0.06); position:relative; overflow:hidden; }
+        .game-minimap::before { content:''; position:absolute; width:5px; height:5px; background:#ef4444; border-radius:50%; top:40%; left:35%; box-shadow:0 0 5px #ef4444; animation:dotMove 4s ease-in-out infinite; }
+        @keyframes dotMove { 0%,100%{top:40%;left:35%;} 33%{top:55%;left:60%;} 66%{top:30%;left:50%;} }
+        .game-timer { font-family:var(--font-mono); font-size:1rem; font-weight:700; color:#ef4444; letter-spacing:0.05em; animation:timerBlink 1s step-start infinite; text-shadow:0 0 10px rgba(239,68,68,0.6); }
+        @keyframes timerBlink { 50%{opacity:0.7;} }
+        .game-center { flex:1; display:flex; align-items:center; justify-content:center; position:relative; }
+        .game-crosshair { width:32px; height:32px; position:relative; opacity:0.45; }
+        .game-crosshair::before,.game-crosshair::after { content:''; position:absolute; background:rgba(239,68,68,0.7); }
+        .game-crosshair::before { width:1px; height:100%; left:50%; top:0; }
+        .game-crosshair::after  { width:100%; height:1px; top:50%; left:0; }
+        .game-crosshair-inner { position:absolute; width:9px; height:9px; border:1px solid rgba(239,68,68,0.7); border-radius:50%; top:50%; left:50%; transform:translate(-50%,-50%); }
+        .game-bottom { display:flex; justify-content:space-between; align-items:flex-end; }
+        .game-log { font-family:var(--font-mono); font-size:0.47rem; color:rgba(139,92,246,0.65); display:flex; flex-direction:column; gap:2px; }
+        .game-log span { display:block; }
+        .game-ammo { font-family:var(--font-mono); font-size:0.8rem; color:rgba(255,255,255,0.45); letter-spacing:0.04em; }
+        .game-ammo strong { color:white; font-size:1rem; }
+        .game-scan-line { position:absolute; inset:0; background:repeating-linear-gradient(to bottom,transparent 0px,transparent 3px,rgba(0,0,0,0.05) 3px,rgba(0,0,0,0.05) 4px); pointer-events:none; }
+        .game-vignette { position:absolute; inset:0; background:radial-gradient(ellipse 80% 80% at 50% 50%,transparent 50%,rgba(0,0,0,0.55) 100%); pointer-events:none; }
+        .game-icon-overlay { position:absolute; font-size:5rem; color:rgba(139,92,246,0.06); z-index:0; }
+
+        .thumb-voxel { background:linear-gradient(135deg,#050b18,#0a1428); position:relative; overflow:hidden; }
+        .thumb-voxel::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 50% 40% at 50% 60%,rgba(6,182,212,0.1),transparent),radial-gradient(circle at 80% 20%,rgba(139,92,246,0.08),transparent 40%); }
+        .voxel-scene { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+        .voxel-grid-bg { position:absolute; inset:0; background-image:linear-gradient(rgba(6,182,212,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(6,182,212,0.06) 1px,transparent 1px); background-size:24px 24px; transform:perspective(400px) rotateX(45deg); transform-origin:bottom center; mask-image:linear-gradient(to top,rgba(0,0,0,0.5),transparent 80%); }
+        .voxel-group { position:relative; transform-style:preserve-3d; animation:voxelSpin 14s linear infinite; }
+        @keyframes voxelSpin { from{transform:rotateY(0deg);} to{transform:rotateY(360deg);} }
+        .cube { width:28px; height:28px; position:absolute; transform-style:preserve-3d; }
+        .cube-face { position:absolute; width:28px; height:28px; border:1px solid; opacity:0.9; }
+        .cube-top    { transform:rotateX(90deg) translateZ(14px);  background:rgba(6,182,212,0.35); border-color:rgba(6,182,212,0.6); }
+        .cube-front  { transform:translateZ(14px);                  background:rgba(6,182,212,0.2);  border-color:rgba(6,182,212,0.4); }
+        .cube-right  { transform:rotateY(90deg) translateZ(14px);   background:rgba(6,182,212,0.12); border-color:rgba(6,182,212,0.3); }
+        .cube-back   { transform:rotateY(180deg) translateZ(14px);  background:rgba(6,182,212,0.08); border-color:rgba(6,182,212,0.2); }
+        .cube-left   { transform:rotateY(-90deg) translateZ(14px);  background:rgba(6,182,212,0.1);  border-color:rgba(6,182,212,0.25); }
+        .cube-bottom { transform:rotateX(-90deg) translateZ(14px);  background:rgba(6,182,212,0.05); border-color:rgba(6,182,212,0.15); }
+        .cube-purple .cube-top   { background:rgba(139,92,246,0.35); border-color:rgba(139,92,246,0.6); }
+        .cube-purple .cube-front { background:rgba(139,92,246,0.2);  border-color:rgba(139,92,246,0.4); }
+        .cube-purple .cube-right { background:rgba(139,92,246,0.12); border-color:rgba(139,92,246,0.3); }
+        .cube-purple .cube-back  { background:rgba(139,92,246,0.08); border-color:rgba(139,92,246,0.2); }
+        .cube-purple .cube-left  { background:rgba(139,92,246,0.1);  border-color:rgba(139,92,246,0.25); }
+        .cube-purple .cube-bottom{ background:rgba(139,92,246,0.05); border-color:rgba(139,92,246,0.15); }
+        .cube-blue .cube-top   { background:rgba(59,130,246,0.35); border-color:rgba(59,130,246,0.6); }
+        .cube-blue .cube-front { background:rgba(59,130,246,0.2);  border-color:rgba(59,130,246,0.4); }
+        .cube-blue .cube-right { background:rgba(59,130,246,0.12); border-color:rgba(59,130,246,0.3); }
+        .cube-blue .cube-back  { background:rgba(59,130,246,0.08); border-color:rgba(59,130,246,0.2); }
+        .cube-blue .cube-left  { background:rgba(59,130,246,0.1);  border-color:rgba(59,130,246,0.25); }
+        .cube-blue .cube-bottom{ background:rgba(59,130,246,0.05); border-color:rgba(59,130,246,0.15); }
+        .voxel-fps { position:absolute; top:12px; right:14px; font-family:var(--font-mono); font-size:0.56rem; color:rgba(6,182,212,0.65); letter-spacing:0.06em; }
+        .voxel-coords { position:absolute; bottom:12px; left:14px; font-family:var(--font-mono); font-size:0.5rem; color:rgba(6,182,212,0.45); line-height:1.6; }
+        .voxel-icon-bg { position:absolute; font-size:6rem; color:rgba(6,182,212,0.04); }
+
+        .thumb-security { background:#050c05; position:relative; overflow:hidden; }
+        .thumb-security::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 60% 50% at 50% 50%,rgba(34,197,94,0.06),transparent); }
+        .terminal-wrap { position:absolute; inset:12px; border:1px solid rgba(34,197,94,0.2); border-radius:7px; background:rgba(0,0,0,0.55); overflow:hidden; display:flex; flex-direction:column; }
+        .terminal-titlebar { height:22px; background:rgba(34,197,94,0.07); border-bottom:1px solid rgba(34,197,94,0.15); display:flex; align-items:center; padding:0 9px; gap:5px; }
+        .term-dot { width:6px; height:6px; border-radius:50%; }
+        .term-dot-r { background:#ef4444; } .term-dot-y { background:#fbbf24; } .term-dot-g { background:#22c55e; }
+        .terminal-title { font-family:var(--font-mono); font-size:0.48rem; color:rgba(34,197,94,0.55); margin-left:4px; letter-spacing:0.05em; }
+        .terminal-body { flex:1; padding:9px 11px; font-family:var(--font-mono); font-size:0.5rem; color:rgba(34,197,94,0.8); line-height:1.9; overflow:hidden; }
+        .term-line { display:block; }
+        .term-prompt { color:rgba(34,197,94,0.45); }
+        .term-cmd { color:#22c55e; }
+        .term-out { color:rgba(34,197,94,0.5); }
+        .term-warn { color:#fbbf24; }
+        .term-ok { color:#22c55e; }
+        .term-cursor { display:inline-block; width:5px; height:0.72em; background:#22c55e; animation:termBlink 1s step-start infinite; vertical-align:middle; }
+        @keyframes termBlink { 50%{opacity:0;} }
+        .term-scan { position:absolute; inset:0; background:repeating-linear-gradient(to bottom,transparent 0px,transparent 2px,rgba(34,197,94,0.02) 2px,rgba(34,197,94,0.02) 4px); pointer-events:none; }
+        .term-glow-line { position:absolute; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,rgba(34,197,94,0.25),transparent); animation:scanDown 4s linear infinite; pointer-events:none; }
+        @keyframes scanDown { 0%{top:0%;opacity:0;} 5%{opacity:1;} 95%{opacity:1;} 100%{top:100%;opacity:0;} }
+        .security-icon-bg { position:absolute; font-size:5.5rem; color:rgba(34,197,94,0.03); bottom:8px; right:8px; }
+
+        .project-thumb-gradient {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        .project-card:hover .project-thumb-gradient { opacity: 1; }
+
+        .project-body { padding: 32px; }
+        .project-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .tag {
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 0.68rem;
+            font-family: var(--font-mono);
+            letter-spacing: 0.05em;
+        }
+        .tag-blue { background: rgba(59,130,246,0.1); color: var(--blue); border: 1px solid rgba(59,130,246,0.2); }
+        .tag-purple { background: rgba(139,92,246,0.1); color: var(--purple); border: 1px solid rgba(139,92,246,0.2); }
+        .tag-pink { background: rgba(236,72,153,0.1); color: var(--pink); border: 1px solid rgba(236,72,153,0.2); }
+        .tag-cyan { background: rgba(6,182,212,0.1); color: var(--cyan); border: 1px solid rgba(6,182,212,0.2); }
+
+        .project-body h3 {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+        }
+        .project-body p { font-size: 0.85rem; color: var(--muted); line-height: 1.7; }
+
+        /* PROCESS SECTION */
+        .process-section { padding: 120px 48px; max-width: 1280px; margin: 0 auto; }
+
+        .process-steps {
+            margin-top: 70px;
+            display: grid;
+            gap: 0;
+        }
+
+        .process-step {
+            display: grid;
+            grid-template-columns: 80px 1fr;
+            gap: 40px;
+            padding: 40px 0;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+            transition: background 0.3s;
+        }
+        .process-step:last-child { border-bottom: none; }
+
+        .step-num {
+            font-family: var(--font-display);
+            font-size: 4rem;
+            font-weight: 800;
+            color: rgba(59,130,246,0.15);
+            line-height: 1;
+            transition: color 0.3s;
+        }
+        .process-step:hover .step-num { color: rgba(59,130,246,0.4); }
+
+        .step-content h3 {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+            padding-top: 8px;
+        }
+        .step-content p { font-size: 0.88rem; color: var(--muted); line-height: 1.8; max-width: 600px; }
+
+        .step-arrow {
+            position: absolute;
+            right: 0; top: 50%;
+            transform: translateY(-50%);
+            color: var(--border);
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+        .process-step:hover .step-arrow { color: var(--blue); transform: translateY(-50%) translateX(4px); }
+
+        /* FAQ */
+        .faq-section { padding: 120px 48px; max-width: 1280px; margin: 0 auto; }
+
+        .faq-list { margin-top: 60px; }
+
+        .faq-item {
+            border-bottom: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .faq-question {
+            padding: 28px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .faq-question:hover { color: white; }
+        .faq-question h4 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text);
+            transition: color 0.2s;
+        }
+        .faq-question:hover h4 { color: white; }
+
+        .faq-icon {
+            width: 32px; height: 32px;
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: var(--muted);
+            flex-shrink: 0;
+            transition: all 0.3s;
+        }
+        .faq-item.open .faq-icon {
+            background: var(--blue);
+            border-color: var(--blue);
+            color: white;
+            transform: rotate(45deg);
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1), padding 0.3s;
+        }
+        .faq-item.open .faq-answer { max-height: 200px; padding-bottom: 28px; }
+        .faq-answer p { font-size: 0.9rem; color: var(--muted); line-height: 1.8; }
+
+        /* CONTACT / CTA */
+        .cta-section {
+            padding: 120px 48px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            width: 800px; height: 400px;
+            background: radial-gradient(ellipse, rgba(59,130,246,0.08), transparent);
+            pointer-events: none;
+        }
+
+        .cta-section h2 {
+            font-family: var(--font-display);
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -0.03em;
+            color: white;
+            margin-bottom: 24px;
+        }
+        .cta-section p { font-size: 1rem; color: var(--muted); margin-bottom: 48px; }
+
+        /* ============= SERVICES PAGE ============= */
+        .services-hero {
+            padding: 180px 48px 80px;
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+        .services-hero h1 {
+            font-family: var(--font-display);
+            font-size: clamp(3rem, 8vw, 7rem);
+            font-weight: 800;
+            line-height: 0.95;
+            letter-spacing: -0.03em;
+            color: white;
+            margin-bottom: 24px;
+        }
+
+        .services-list {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 48px 120px;
+        }
+
+        .service-row {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 80px;
+            align-items: center;
+            padding: 80px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .service-row:last-child { border-bottom: none; }
+        .service-row.reverse { direction: rtl; }
+        .service-row.reverse > * { direction: ltr; }
+
+        .service-num {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--blue);
+            letter-spacing: 0.1em;
+            margin-bottom: 20px;
+        }
+        .service-row h2 {
+            font-family: var(--font-display);
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 16px;
+            line-height: 1.1;
+        }
+        .service-row p { color: var(--muted); line-height: 1.8; font-size: 0.95rem; margin-bottom: 24px; }
+
+        .service-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .feature-tag {
+            padding: 6px 14px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 0.75rem;
+            color: var(--text);
+        }
+
+        .service-visual {
+            aspect-ratio: 4/3;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+            color: rgba(255,255,255,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        .service-visual::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(59,130,246,0.05), transparent);
+        }
+
+        /* ============= CONTACT PAGE ============= */
+        .contact-hero {
+            padding: 180px 48px 80px;
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: start;
+        }
+        .contact-hero h1 {
+            font-family: var(--font-display);
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -0.03em;
+            color: white;
+            margin-bottom: 24px;
+        }
+        .contact-hero p { color: var(--muted); line-height: 1.8; font-size: 1rem; margin-bottom: 40px; }
+
+        .contact-info { display: flex; flex-direction: column; gap: 24px; }
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            transition: border-color 0.3s;
+        }
+        .contact-item:hover { border-color: rgba(59,130,246,0.3); }
+        .contact-item-icon {
+            width: 44px; height: 44px;
+            background: rgba(59,130,246,0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--blue);
+            flex-shrink: 0;
+        }
+        .contact-item-text span:first-child { display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 2px; letter-spacing: 0.05em; text-transform: uppercase; }
+        .contact-item-text span:last-child { font-size: 0.9rem; font-weight: 500; color: var(--text); }
+
+        .contact-form {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 48px;
+        }
+        .form-group { margin-bottom: 24px; }
+        .form-group label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--muted);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            color: var(--text);
+            font-family: var(--font-body);
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+            appearance: none;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            border-color: var(--blue);
+            background: rgba(59,130,246,0.04);
+        }
+        .form-group textarea { height: 140px; resize: vertical; }
+        .form-group select { cursor: pointer; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+        /* FOOTER */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 60px 48px;
+            background: var(--bg2);
+        }
+        .footer-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .footer-logo {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: white;
+        }
+        .footer-logo span { color: var(--blue); }
+        .footer-copy { font-size: 0.75rem; color: var(--muted); }
+        .footer-links { display: flex; gap: 24px; }
+        .footer-links a {
+            font-size: 0.78rem;
+            color: var(--muted);
+            text-decoration: none;
+            transition: color 0.2s;
+            cursor: pointer;
+        }
+        .footer-links a:hover { color: white; }
+
+        /* ============= LOADING SCREEN ============= */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 24px;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+        #loading-screen.hide {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .loading-logo {
+            font-family: var(--font-display);
+            font-size: clamp(2.8rem, 8vw, 5.5rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: white;
+            opacity: 0;
+            animation: loadFadeIn 0.5s 0.3s ease forwards;
+            position: relative;
+        }
+        .loading-logo span { color: var(--blue); }
+        .loading-logo .loading-glow {
+            position: absolute;
+            inset: -20px;
+            background: radial-gradient(ellipse, rgba(59,130,246,0.25), transparent 70%);
+            filter: blur(20px);
+            z-index: -1;
+            animation: glowPulse 1.5s 0.5s ease-in-out infinite alternate;
+        }
+        @keyframes loadFadeIn {
+            from { opacity: 0; transform: translateY(16px) scale(0.96); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes glowPulse {
+            from { opacity: 0.4; transform: scale(0.95); }
+            to   { opacity: 1;   transform: scale(1.1); }
+        }
+        .loading-tagline {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--cyan);
+            opacity: 0;
+            animation: loadFadeIn 0.5s 0.7s ease forwards;
+        }
+        .loading-logo .glitch-text {
+            position: relative;
+            display: inline-block;
+        }
+        .loading-logo .glitch-text::before,
+        .loading-logo .glitch-text::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: var(--bg);
+        }
+        .loading-logo .glitch-text::before {
+            color: var(--cyan);
+            animation: glitch1 2s 0.8s cubic-bezier(0.25,0.46,0.45,0.94) infinite;
+            clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+        }
+        .loading-logo .glitch-text::after {
+            color: var(--purple);
+            animation: glitch2 2s 1.1s cubic-bezier(0.25,0.46,0.45,0.94) infinite;
+            clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
+        }
+        @keyframes glitch1 {
+            0%, 85%, 100% { transform: translate(0); opacity: 0; }
+            87%  { transform: translate(-3px, 1px); opacity: 0.8; }
+            89%  { transform: translate(3px, -1px); opacity: 0.8; }
+            91%  { transform: translate(0); opacity: 0; }
+        }
+        @keyframes glitch2 {
+            0%, 85%, 100% { transform: translate(0); opacity: 0; }
+            87%  { transform: translate(3px, 2px); opacity: 0.8; }
+            89%  { transform: translate(-3px, -2px); opacity: 0.8; }
+            91%  { transform: translate(0); opacity: 0; }
+        }
+        .loading-bar-wrap {
+            width: 200px;
+            height: 2px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 2px;
+            overflow: hidden;
+            opacity: 0;
+            animation: loadFadeIn 0.4s 0.9s ease forwards;
+        }
+        .loading-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--blue), var(--purple), var(--cyan));
+            border-radius: 2px;
+            animation: loadBar 1.6s 1s cubic-bezier(0.4,0,0.2,1) forwards;
+        }
+        @keyframes loadBar {
+            0%   { width: 0%; }
+            60%  { width: 80%; }
+            100% { width: 100%; }
+        }
+
+        /* ============= BACK TO TOP BUTTON ============= */
+        #back-to-top {
+            position: fixed;
+            bottom: 36px;
+            right: 36px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(13,21,38,0.82);
+            border: 1px solid rgba(59,130,246,0.35);
+            color: var(--blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            cursor: pointer;
+            z-index: 9000;
+            backdrop-filter: blur(12px);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: opacity 0.35s ease, visibility 0.35s ease, transform 0.35s ease, box-shadow 0.3s, border-color 0.3s, background 0.3s;
+        }
+        #back-to-top.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        #back-to-top:hover {
+            background: rgba(59,130,246,0.18);
+            border-color: var(--blue);
+            box-shadow: 0 8px 32px rgba(59,130,246,0.3);
+            transform: translateY(-4px);
+        }
+
+        /* ============= FOOTER SNS ICONS ============= */
+        .footer-sns {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .footer-sns a {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--muted);
+            font-size: 0.88rem;
+            text-decoration: none;
+            transition: all 0.25s;
+        }
+        .footer-sns a:hover {
+            border-color: rgba(59,130,246,0.5);
+            color: var(--blue);
+            background: rgba(59,130,246,0.08);
+            transform: translateY(-2px);
+        }
+
+        /* ============= TEAM CARD SOCIAL ICONS ============= */
+        .team-social {
+            display: flex;
+            gap: 10px;
+            margin-top: 18px;
+            padding-top: 18px;
+            border-top: 1px solid var(--border);
+        }
+        .team-social a {
+            width: 34px; height: 34px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--muted);
+            font-size: 0.82rem;
+            text-decoration: none;
+            transition: all 0.25s;
+        }
+        .team-social a:hover {
+            border-color: rgba(59,130,246,0.5);
+            color: var(--blue);
+            background: rgba(59,130,246,0.08);
+            transform: translateY(-2px);
+        }
+
+        /* REVEAL ANIMATIONS */
+        .reveal {
+            opacity: 0;
+            transform: translateY(32px);
+            transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+
+        /* ============= TEAM PAGE ============= */
+        .team-hero {
+            padding: 180px 48px 80px;
+            max-width: 1280px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .team-hero h1 {
+            font-family: var(--font-display);
+            font-size: clamp(3rem, 8vw, 7rem);
+            font-weight: 800;
+            line-height: 0.95;
+            letter-spacing: -0.03em;
+            color: white;
+            margin-bottom: 24px;
+        }
+        .team-hero p {
+            font-size: 1.1rem;
+            color: var(--muted);
+            max-width: 540px;
+            margin: 0 auto;
+            line-height: 1.75;
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            margin-top: 60px;
+            max-width: 480px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .team-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            overflow: hidden;
+            transition: all 0.4s;
+            position: relative;
+        }
+        .team-card:hover {
+            border-color: rgba(59,130,246,0.3);
+            transform: translateY(-8px);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+        }
+
+        .team-card-avatar {
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .team-card-avatar-inner {
+            width: 96px; height: 96px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-display);
+            font-size: 2rem;
+            font-weight: 800;
+            color: white;
+            position: relative;
+            z-index: 1;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+        .team-card-avatar-bg {
+            position: absolute;
+            inset: 0;
+            opacity: 0.08;
+        }
+        .team-card-avatar-glow {
+            position: absolute;
+            width: 200px; height: 200px;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.15;
+        }
+
+        .team-card-body { padding: 28px 32px 32px; }
+        .team-card-body h3 {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 4px;
+        }
+        .team-role {
+            font-size: 0.78rem;
+            font-family: var(--font-mono);
+            color: var(--blue);
+            letter-spacing: 0.06em;
+            margin-bottom: 16px;
+        }
+        .team-bio {
+            font-size: 0.85rem;
+            color: var(--muted);
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+        .team-skills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .team-skill {
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 0.68rem;
+            font-family: var(--font-mono);
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            color: var(--muted);
+        }
+
+        .team-values {
+            margin-top: 80px;
+            background: var(--bg2);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 80px 48px;
+        }
+        .team-values-inner { max-width: 1280px; margin: 0 auto; }
+        .values-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 40px;
+            margin-top: 52px;
+        }
+        .value-item {}
+        .value-icon {
+            font-size: 1.8rem;
+            margin-bottom: 16px;
+            display: block;
+        }
+        .value-item h4 {
+            font-family: var(--font-display);
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 8px;
+        }
+        .value-item p { font-size: 0.83rem; color: var(--muted); line-height: 1.7; }
+
+        /* ============= CAREERS PAGE ============= */
+        .careers-hero {
+            padding: 180px 48px 80px;
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+        .careers-hero h1 {
+            font-family: var(--font-display);
+            font-size: clamp(3rem, 8vw, 7rem);
+            font-weight: 800;
+            line-height: 0.95;
+            letter-spacing: -0.03em;
+            color: white;
+            margin-bottom: 24px;
+        }
+        .careers-hero p {
+            font-size: 1.05rem;
+            color: var(--muted);
+            max-width: 540px;
+            line-height: 1.75;
+        }
+
+        .careers-section { padding: 80px 48px; max-width: 1280px; margin: 0 auto; }
+
+        .job-list { margin-top: 48px; display: flex; flex-direction: column; gap: 16px; }
+
+        .job-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 36px 40px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 32px;
+            transition: all 0.35s;
+            cursor: pointer;
+        }
+        .job-card:hover {
+            border-color: rgba(59,130,246,0.3);
+            transform: translateX(6px);
+            box-shadow: 0 0 40px rgba(59,130,246,0.06);
+        }
+        .job-card-left {}
+        .job-type-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .job-type {
+            font-size: 0.68rem;
+            font-family: var(--font-mono);
+            padding: 4px 12px;
+            border-radius: 100px;
+            letter-spacing: 0.05em;
+        }
+        .job-type-open { background: rgba(34,197,94,0.1); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); }
+        .job-type-intern { background: rgba(251,191,36,0.1); color: #fbbf24; border: 1px solid rgba(251,191,36,0.2); }
+        .job-type-collab { background: rgba(139,92,246,0.1); color: var(--purple); border: 1px solid rgba(139,92,246,0.2); }
+
+        .job-dept {
+            font-size: 0.72rem;
+            font-family: var(--font-mono);
+            color: var(--muted);
+            letter-spacing: 0.06em;
+        }
+        .job-card h3 {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+        }
+        .job-card p { font-size: 0.86rem; color: var(--muted); line-height: 1.7; }
+        .job-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+        .job-card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 16px; flex-shrink: 0; }
+        .job-arrow {
+            width: 44px; height: 44px;
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--muted);
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+        .job-card:hover .job-arrow {
+            background: var(--blue);
+            border-color: var(--blue);
+            color: white;
+            transform: rotate(-45deg);
+        }
+
+        .careers-perks {
+            background: var(--bg2);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 80px 48px;
+        }
+        .careers-perks-inner { max-width: 1280px; margin: 0 auto; }
+        .perks-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-top: 52px;
+        }
+        .perk-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 36px;
+            transition: all 0.3s;
+        }
+        .perk-card:hover {
+            border-color: rgba(59,130,246,0.25);
+            transform: translateY(-4px);
+        }
+        .perk-icon { font-size: 2rem; margin-bottom: 16px; display: block; }
+        .perk-card h4 {
+            font-family: var(--font-display);
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 8px;
+        }
+        .perk-card p { font-size: 0.83rem; color: var(--muted); line-height: 1.7; }
+
+        .apply-form-section { padding: 80px 48px; max-width: 1280px; margin: 0 auto; }
+        .apply-form {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 52px;
+            max-width: 720px;
+        }
+        .apply-form h3 {
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 8px;
+        }
+        .apply-form > p {
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .team-grid { grid-template-columns: 1fr; }
+            .values-grid { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+            .perks-grid { grid-template-columns: 1fr; }
+            .job-card { grid-template-columns: 1fr; }
+            .job-card-right { flex-direction: row; align-items: center; }
+            .team-hero, .careers-hero { padding: 120px 24px 60px; }
+            .careers-section, .apply-form-section { padding: 60px 24px; }
+            .team-values, .careers-perks { padding: 60px 24px; }
+            .apply-form { padding: 32px 24px; }
+        }
+
+        /* ===== DARK/LIGHT MODE TOGGLE ===== */
+        .theme-toggle-btn {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            color: var(--muted);
+            font-size: 0.85rem;
+            transition: all 0.25s;
+            flex-shrink: 0;
+        }
+        .theme-toggle-btn:hover {
+            color: var(--blue);
+            border-color: rgba(59,130,246,0.4);
+            background: rgba(59,130,246,0.08);
+        }
+
+        /* Light Mode overrides */
+        body.light-mode {
+            --bg: #f8fafc;
+            --bg2: #f1f5f9;
+            --surface: #ffffff;
+            --border: rgba(0,0,0,0.08);
+            --text: #1e293b;
+            --muted: #64748b;
+            transition: background 0.3s, color 0.3s;
+        }
+        body.light-mode,
+        body.light-mode * {
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+        }
+        body.light-mode nav.scrolled {
+            background: rgba(248,250,252,0.92);
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+        }
+        body.light-mode .nav-logo { color: #1e293b; }
+        body.light-mode .hero h1 { color: #1e293b; }
+        body.light-mode .hero-desc { color: #64748b; }
+        body.light-mode .section-title { color: #1e293b; }
+        body.light-mode .cta-section h2 { color: #1e293b; }
+        body.light-mode .services-hero h1 { color: #1e293b; }
+        body.light-mode .contact-hero h1 { color: #1e293b; }
+        body.light-mode .team-hero h1 { color: #1e293b; }
+        body.light-mode .careers-hero h1 { color: #1e293b; }
+        body.light-mode .card h3 { color: #1e293b; }
+        body.light-mode .project-body h3 { color: #1e293b; }
+        body.light-mode .step-content h3 { color: #1e293b; }
+        body.light-mode .service-row h2 { color: #1e293b; }
+        body.light-mode .faq-question h4 { color: #1e293b; }
+        body.light-mode .team-card-body h3 { color: #1e293b; }
+        body.light-mode .job-card h3 { color: #1e293b; }
+        body.light-mode .perk-card h4 { color: #1e293b; }
+        body.light-mode .apply-form h3 { color: #1e293b; }
+        body.light-mode .value-item h4 { color: #1e293b; }
+        body.light-mode .stat-item { background: var(--bg); }
+        body.light-mode footer { background: var(--bg2); }
+        body.light-mode .footer-logo { color: #1e293b; }
+        body.light-mode .loading-logo { color: #1e293b; }
+        body.light-mode .hero-grid {
+            background-image:
+                linear-gradient(rgba(59,130,246,0.07) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59,130,246,0.07) 1px, transparent 1px);
+        }
+        body.light-mode .btn-ghost {
+            color: #1e293b;
+            border-color: rgba(0,0,0,0.15);
+        }
+        body.light-mode .btn-ghost:hover {
+            background: rgba(0,0,0,0.04);
+            border-color: rgba(0,0,0,0.3);
+        }
+        body.light-mode .form-group input,
+        body.light-mode .form-group textarea,
+        body.light-mode .form-group select {
+            background: #f8fafc;
+            color: #1e293b;
+            border-color: rgba(0,0,0,0.12);
+        }
+        body.light-mode .cursor { background: var(--blue); mix-blend-mode: multiply; }
+        body.light-mode .cursor-ring { border-color: rgba(59,130,246,0.4); mix-blend-mode: multiply; }
+        body.light-mode body::before { opacity: 0.15; }
+        body.light-mode .team-card-avatar-inner { border-color: rgba(0,0,0,0.08); }
+        body.light-mode .feature-tag { color: #1e293b; background: rgba(0,0,0,0.03); }
+        body.light-mode .contact-item-text span:last-child { color: #1e293b; }
+        body.light-mode #back-to-top { background: rgba(248,250,252,0.9); }
+        body.light-mode .stack-section { background: var(--bg2); }
+        body.light-mode .team-values { background: var(--bg2); }
+        body.light-mode .careers-perks { background: var(--bg2); }
+
+        /* ===== MOBILE MENU BUTTON ===== */
+        .mobile-menu-btn {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            gap: 5px;
+            cursor: pointer;
+            padding: 8px;
+            z-index: 1001;
+            position: relative;
+        }
+        .mobile-menu-btn span {
+            display: block;
+            width: 24px; height: 1.5px;
+            background: var(--text);
+            transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s, width 0.3s;
+            transform-origin: center;
+        }
+        /* X state */
+        .mobile-menu-btn.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+        .mobile-menu-btn.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+        .mobile-menu-btn.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+        /* ===== MOBILE FULLSCREEN OVERLAY MENU ===== */
+        #mobile-menu-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 990;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            background: rgba(3, 7, 18, 0.97);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s cubic-bezier(0.4,0,0.2,1), visibility 0.4s;
+            overflow: hidden;
+        }
+        #mobile-menu-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        /* Light mode overlay */
+        body.light-mode #mobile-menu-overlay {
+            background: rgba(248, 250, 252, 0.97);
+        }
+        /* Decorative orbs inside overlay */
+        #mobile-menu-overlay::before {
+            content: '';
+            position: absolute;
+            width: 480px; height: 480px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(59,130,246,0.1), transparent 70%);
+            top: -120px; right: -120px;
+            pointer-events: none;
+        }
+        #mobile-menu-overlay::after {
+            content: '';
+            position: absolute;
+            width: 360px; height: 360px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(139,92,246,0.08), transparent 70%);
+            bottom: -80px; left: -80px;
+            pointer-events: none;
+        }
+
+        .mobile-menu-nav {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            width: 100%;
+            padding: 0 32px;
+            position: relative;
+            z-index: 1;
+        }
+        .mobile-menu-nav a {
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 8vw, 3.2rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text);
+            text-decoration: none;
+            text-align: center;
+            padding: 10px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 0.45s cubic-bezier(0.16,1,0.3,1), transform 0.45s cubic-bezier(0.16,1,0.3,1), color 0.2s, background 0.2s;
+            display: block;
+            width: 100%;
+        }
+        .mobile-menu-nav a:hover {
+            color: var(--blue);
+            background: rgba(59,130,246,0.06);
+        }
+        /* Sequential slide-in delays */
+        #mobile-menu-overlay.open .mobile-menu-nav a:nth-child(1) { opacity:1; transform:translateY(0); transition-delay:0.05s; }
+        #mobile-menu-overlay.open .mobile-menu-nav a:nth-child(2) { opacity:1; transform:translateY(0); transition-delay:0.12s; }
+        #mobile-menu-overlay.open .mobile-menu-nav a:nth-child(3) { opacity:1; transform:translateY(0); transition-delay:0.19s; }
+        #mobile-menu-overlay.open .mobile-menu-nav a:nth-child(4) { opacity:1; transform:translateY(0); transition-delay:0.26s; }
+        #mobile-menu-overlay.open .mobile-menu-nav a:nth-child(5) { opacity:1; transform:translateY(0); transition-delay:0.33s; }
+
+        .mobile-menu-divider {
+            width: 48px; height: 1px;
+            background: var(--border);
+            margin: 20px auto;
+            position: relative;
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.4s 0.38s;
+        }
+        #mobile-menu-overlay.open .mobile-menu-divider { opacity: 1; }
+
+        .mobile-menu-extras {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+            z-index: 1;
+            opacity: 0;
+            transform: translateY(16px);
+            transition: opacity 0.45s 0.42s cubic-bezier(0.16,1,0.3,1), transform 0.45s 0.42s cubic-bezier(0.16,1,0.3,1);
+        }
+        #mobile-menu-overlay.open .mobile-menu-extras { opacity: 1; transform: translateY(0); }
+
+        .mobile-lang-switcher {
+            display: flex;
+            gap: 2px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 4px;
+        }
+        body.light-mode .mobile-lang-switcher { background: rgba(0,0,0,0.04); }
+
+        .mobile-theme-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 24px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--muted);
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .mobile-theme-btn:hover {
+            color: var(--blue);
+            border-color: rgba(59,130,246,0.4);
+            background: rgba(59,130,246,0.08);
+        }
+        body.light-mode .mobile-theme-btn { background: rgba(0,0,0,0.04); }
+
+        @media (max-width: 768px) {
+            nav { padding: 18px 24px; }
+            nav.scrolled { padding: 14px 24px; }
+            .nav-links { display: none; }
+            .lang-switcher { display: none; }
+            .theme-toggle-btn { display: none; }
+            .mobile-menu-btn { display: flex; }
+
+            .hero { padding: 100px 24px 80px; }
+            section { padding: 80px 24px; }
+            .stats { grid-template-columns: repeat(2, 1fr); }
+            .expertise-grid { grid-template-columns: 1fr; }
+            .stack-grid { grid-template-columns: repeat(3, 1fr); }
+            .projects-grid { grid-template-columns: 1fr; }
+            .project-card.featured { grid-column: span 1; }
+            .service-row { grid-template-columns: 1fr; gap: 40px; }
+            .service-row.reverse { direction: ltr; }
+            .contact-hero { grid-template-columns: 1fr; gap: 48px; padding-top: 120px; }
+            .footer-inner { flex-direction: column; gap: 24px; text-align: center; }
+            .services-hero, .services-list { padding-left: 24px; padding-right: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- LOADING SCREEN -->
+    <div id="loading-screen">
+        <div class="loading-logo">
+            <div class="loading-glow"></div>
+            <span class="glitch-text" data-text="MARST">MARST</span>&nbsp;<span class="glitch-text" style="color:var(--blue);" data-text="AI">AI</span>
+        </div>
+        <div class="loading-tagline">AI + Web Studio</div>
+        <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+    </div>
+
+    <!-- BACK TO TOP -->
+    <div id="back-to-top" title="맨 위로">
+        <i class="fa-solid fa-chevron-up"></i>
+    </div>
+
+    <!-- CURSOR -->
+    <div class="cursor" id="cursor"></div>
+    <div class="cursor-ring" id="cursorRing"></div>
+
+    <!-- MOBILE FULLSCREEN MENU OVERLAY -->
+    <div id="mobile-menu-overlay">
+        <nav class="mobile-menu-nav">
+            <a onclick="goTo('home'); closeMobileMenu()">Home</a>
+            <a onclick="goTo('services'); closeMobileMenu()">Services</a>
+            <a onclick="goTo('team'); closeMobileMenu()">Team</a>
+            <a onclick="goTo('careers'); closeMobileMenu()">Careers</a>
+            <a onclick="goTo('contact'); closeMobileMenu()">Contact</a>
+        </nav>
+        <div class="mobile-menu-divider"></div>
+        <div class="mobile-menu-extras">
+            <div class="mobile-lang-switcher">
+                <div class="lang-btn active" onclick="setLang('ko')">KO</div>
+                <div class="lang-btn" onclick="setLang('en')">EN</div>
+                <div class="lang-btn" onclick="setLang('jp')">JP</div>
+            </div>
+            <button class="mobile-theme-btn" onclick="toggleTheme()">
+                <i class="fa-solid fa-moon" id="mobileThemeIcon"></i>
+                <span id="mobileThemeLabel">라이트 모드</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- NAV -->
+    <nav id="main-nav">
+        <div class="nav-logo">MARST <span>AI</span></div>
+        <ul class="nav-links">
+            <li><a href="#" onclick="goTo('home')">Home</a></li>
+            <li><a href="#" onclick="goTo('services')">Services</a></li>
+            <li><a href="#" onclick="goTo('team')">Team</a></li>
+            <li><a href="#" onclick="goTo('careers')">Careers</a></li>
+            <li><a href="#" onclick="goTo('contact')">Contact</a></li>
+        </ul>
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div class="lang-switcher">
+                <div class="lang-btn active" onclick="setLang('ko')">KO</div>
+                <div class="lang-btn" onclick="setLang('en')">EN</div>
+                <div class="lang-btn" onclick="setLang('jp')">JP</div>
+            </div>
+            <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="라이트/다크 모드 전환">
+                <i class="fa-solid fa-moon" id="themeIcon"></i>
+            </button>
+            <div class="mobile-menu-btn" id="mobileMenuBtn">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ========= HOME PAGE ========= -->
+    <div class="page active" id="page-home">
+
+        <!-- HERO -->
+        <header class="hero">
+            <canvas id="heroParticleCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
+            <div class="hero-grid"></div>
+            <div class="hero-orb orb1"></div>
+            <div class="hero-orb orb2"></div>
+            <div class="hero-orb orb3"></div>
+
+            <div class="hero-badge" style="position:relative;z-index:2;" data-i18n="badge">AI + Web Studio · Since 2024</div>
+
+            <h1 style="position:relative;z-index:2;">
+                LIMITLESS
+                <span class="line2" data-i18n="hero-h1-line2">CREATIVITY</span>
+            </h1>
+
+            <p class="hero-desc" style="position:relative;z-index:2;" data-i18n="hero-desc">
+                기술적 한계를 창의성으로 돌파하며,<br>AI와 Web의 융합으로 새로운 디지털 세계를 구축합니다.
+            </p>
+
+            <div class="hero-cta" style="position:relative;z-index:2;">
+                <a class="btn-primary" onclick="goTo('services')"><span data-i18n="btn-services">서비스 보기</span></a>
+                <a class="btn-ghost" onclick="goTo('contact')" data-i18n="btn-contact">무료 상담하기</a>
+            </div>
+
+            <div class="hero-scroll" style="z-index:2;">
+                <div class="scroll-line"></div>
+                <span>SCROLL</span>
+            </div>
+        </header>
+
+        <!-- STATS -->
+        <div class="stats">
+            <div class="stat-item reveal">
+                <div class="stat-num">50+</div>
+                <div class="stat-label" data-i18n="stat1">완료 프로젝트</div>
+            </div>
+            <div class="stat-item reveal reveal-delay-1">
+                <div class="stat-num">3</div>
+                <div class="stat-label" data-i18n="stat2">핵심 기술 분야</div>
+            </div>
+            <div class="stat-item reveal reveal-delay-2">
+                <div class="stat-num">∞</div>
+                <div class="stat-label" data-i18n="stat3">창의적 가능성</div>
+            </div>
+            <div class="stat-item reveal reveal-delay-3">
+                <div class="stat-num">24/7</div>
+                <div class="stat-label" data-i18n="stat4">기술 지원</div>
+            </div>
+        </div>
+
+        <!-- EXPERTISE -->
+        <section id="about-anchor">
+            <div class="section-tag" data-i18n="tag-expertise">Core Expertise</div>
+            <h2 class="section-title reveal" data-i18n="expertise-title">기술을 넘어<br>경험을 설계합니다</h2>
+            <p class="section-sub reveal reveal-delay-1" data-i18n="expertise-sub">세 가지 핵심 영역에서 독보적인 기술력으로 디지털 경험의 새 기준을 만듭니다.</p>
+
+            <div class="expertise-grid">
+                <div class="card reveal">
+                    <div class="card-icon icon-blue"><i class="fa-solid fa-gamepad"></i></div>
+                    <h3 data-i18n="exp1-title">Game Logic</h3>
+                    <p data-i18n="exp1-desc">Unity & C# 기반의 고성능 엔진 최적화 및 공포 게임의 몰입형 시스템 설계. AI 모듈로 플레이어 경험을 극대화합니다.</p>
+                </div>
+                <div class="card reveal reveal-delay-1">
+                    <div class="card-icon icon-purple"><i class="fa-solid fa-cube"></i></div>
+                    <h3 data-i18n="exp2-title">Web Voxel</h3>
+                    <p data-i18n="exp2-desc">HTML/JS를 활용한 브라우저 기반 복셀 엔진 프로토타이핑 및 3D 웹 렌더링. 웹의 경계를 확장합니다.</p>
+                </div>
+                <div class="card reveal reveal-delay-2">
+                    <div class="card-icon icon-pink"><i class="fa-solid fa-shield-halved"></i></div>
+                    <h3 data-i18n="exp3-title">Forensics</h3>
+                    <p data-i18n="exp3-desc">독자적인 보안 언어 Fëkìér 설계를 통한 기술적 보안 솔루션 제공. 코드의 가장 깊은 레이어까지 보호합니다.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- STACK -->
+        <div class="stack-section">
+            <div>
+                <div class="section-tag">Technical Stack</div>
+                <h2 class="section-title reveal" data-i18n="stack-title">도구가 아닌,<br>무기를 다룹니다</h2>
+
+                <div class="stack-grid">
+                    <div class="stack-item reveal">
+                        <i class="fa-brands fa-html5" style="color:#e34f26;"></i>
+                        <p>HTML5 / CSS3</p>
+                    </div>
+                    <div class="stack-item reveal reveal-delay-1">
+                        <i class="fa-brands fa-js" style="color:#f7df1e;"></i>
+                        <p>JavaScript</p>
+                    </div>
+                    <div class="stack-item reveal reveal-delay-2">
+                        <i class="fa-brands fa-python" style="color:#4b8bbe;"></i>
+                        <p>Python / AI</p>
+                    </div>
+                    <div class="stack-item reveal reveal-delay-3">
+                        <i class="fa-brands fa-unity" style="color:white;"></i>
+                        <p>Unity C#</p>
+                    </div>
+                    <div class="stack-item reveal reveal-delay-1">
+                        <i class="fa-solid fa-database" style="color:#00ed64;"></i>
+                        <p>Database</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FEATURED WORKS -->
+        <section class="projects-section">
+            <div class="section-tag">Featured Works</div>
+            <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap;">
+                <h2 class="section-title reveal" data-i18n="works-title">주요 작업물</h2>
+                <a class="btn-ghost reveal" onclick="goTo('services')" style="margin-bottom:12px; white-space:nowrap;" data-i18n="works-more">모두 보기 →</a>
+            </div>
+
+            <div class="projects-grid">
+                <div class="project-card featured reveal">
+                    <div class="project-thumb thumb-game">
+                        <div class="game-ui-wrap">
+                            <div class="game-topbar">
+                                <div class="game-hp-bar">
+                                    <div class="game-hp-label">HP</div>
+                                    <div class="game-hp-track"><div class="game-hp-fill"></div></div>
+                                </div>
+                                <div class="game-timer">02:47</div>
+                                <div class="game-minimap"></div>
+                            </div>
+                            <div class="game-center">
+                                <div class="game-crosshair">
+                                    <div class="game-crosshair-inner"></div>
+                                </div>
+                                <i class="fa-solid fa-ghost game-icon-overlay"></i>
+                            </div>
+                            <div class="game-bottom">
+                                <div class="game-log">
+                                    <span>[ AI ] Target detected</span>
+                                    <span>[ SYS ] Tension: HIGH</span>
+                                    <span>[ EVT ] Door_03 triggered</span>
+                                </div>
+                                <div class="game-ammo"><strong>12</strong>/36</div>
+                            </div>
+                        </div>
+                        <div class="game-scan-line"></div>
+                        <div class="game-vignette"></div>
+                        <div class="project-thumb-gradient" style="background:linear-gradient(135deg,rgba(59,130,246,0.08),rgba(139,92,246,0.08));"></div>
+                    </div>
+                    <div class="project-body">
+                        <div class="project-tags">
+                            <span class="tag tag-blue">C#</span>
+                            <span class="tag tag-purple">Unity</span>
+                            <span class="tag tag-cyan">AI Module</span>
+                        </div>
+                        <h3 data-i18n="proj1-title">AI Horror Game Logic</h3>
+                        <p data-i18n="proj1-desc">플레이어의 행동을 분석해 긴장감을 유도하는 AI 모듈과 고도화된 타이머 UI 시스템을 결합한 실전 게임 로직입니다.</p>
+                    </div>
+                </div>
+
+                <div class="project-card reveal">
+                    <div class="project-thumb thumb-voxel">
+                        <div class="voxel-scene">
+                            <div class="voxel-grid-bg"></div>
+                            <div class="voxel-group">
+                                <!-- Bottom layer cubes -->
+                                <div class="cube cube-cyan" style="transform:translate3d(-42px,28px,-14px);">
+                                    <div class="cube-face cube-top"></div><div class="cube-face cube-front"></div>
+                                    <div class="cube-face cube-right"></div><div class="cube-face cube-back"></div>
+                                    <div class="cube-face cube-left"></div><div class="cube-face cube-bottom"></div>
+                                </div>
+                                <div class="cube cube-purple" style="transform:translate3d(-14px,28px,-14px);">
+                                    <div class="cube-face cube-top"></div><div class="cube-face cube-front"></div>
+                                    <div class="cube-face cube-right"></div><div class="cube-face cube-back"></div>
+                                    <div class="cube-face cube-left"></div><div class="cube-face cube-bottom"></div>
+                                </div>
+                                <div class="cube cube-blue" style="transform:translate3d(14px,28px,-14px);">
+                                    <div class="cube-face cube-top"></div><div class="cube-face cube-front"></div>
+                                    <div class="cube-face cube-right"></div><div class="cube-face cube-back"></div>
+                                    <div class="cube-face cube-left"></div><div class="cube-face cube-bottom"></div>
+                                </div>
+                                <!-- Middle layer -->
+                                <div class="cube cube-purple" style="transform:translate3d(-14px,0px,-14px);">
+                                    <div class="cube-face cube-top"></div><div class="cube-face cube-front"></div>
+                                    <div class="cube-face cube-right"></div><div class="cube-face cube-back"></div>
+                                    <div class="cube-face cube-left"></div><div class="cube-face cube-bottom"></div>
+                                </div>
+                                <div class="cube" style="transform:translate3d(14px,0px,-14px);">
+                                    <div class="cube-face cube-top"></div><div class="cube-face cube-front"></div>
+                                    <div class="cube-face cube-right"></div><div class="cube-face cube-back"></div>
+                                    <div class="cube-face cube-left"></div><div class="cube-face cube-bottom"></div>
+                                </div>
+                                <!-- Top cube -->
+                                <div class="cube cube-blue" style="transform:translate3d(-14px,-28px,-14px);">
+                                    <div class="cube-face cube-top"></div><div class="cube-face cube-front"></div>
+                                    <div class="cube-face cube-right"></div><div class="cube-face cube-back"></div>
+                                    <div class="cube-face cube-left"></div><div class="cube-face cube-bottom"></div>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-cube voxel-icon-bg"></i>
+                        </div>
+                        <div class="voxel-fps">60 FPS · WebGL</div>
+                        <div class="voxel-coords">X: 128.4<br>Y: 64.0<br>Z: 255.7</div>
+                        <div class="project-thumb-gradient" style="background:linear-gradient(135deg,rgba(139,92,246,0.08),rgba(6,182,212,0.08));"></div>
+                    </div>
+                    <div class="project-body">
+                        <div class="project-tags">
+                            <span class="tag tag-purple">HTML/JS</span>
+                            <span class="tag tag-cyan">WebGL</span>
+                        </div>
+                        <h3 data-i18n="proj2-title">Browser Voxel Engine</h3>
+                        <p data-i18n="proj2-desc">브라우저에서 실시간으로 구동되는 3D 복셀 엔진 프로토타입.</p>
+                    </div>
+                </div>
+
+                <div class="project-card reveal reveal-delay-1">
+                    <div class="project-thumb thumb-security">
+                        <div class="terminal-wrap">
+                            <div class="terminal-titlebar">
+                                <div class="term-dot term-dot-r"></div>
+                                <div class="term-dot term-dot-y"></div>
+                                <div class="term-dot term-dot-g"></div>
+                                <div class="terminal-title">fek -- fekier-lang v0.3.1</div>
+                            </div>
+                            <div class="terminal-body">
+                                <span class="term-line"><span class="term-prompt">$ </span><span class="term-cmd">fekier compile main.fek</span></span>
+                                <span class="term-line"><span class="term-out">  Parsing tokens... [OK]</span></span>
+                                <span class="term-line"><span class="term-out">  Resolving imports... [OK]</span></span>
+                                <span class="term-line"><span class="term-warn">  ⚠ WARN: unsafe block at L.42</span></span>
+                                <span class="term-line"><span class="term-out">  Encrypting symbols...</span></span>
+                                <span class="term-line"><span class="term-ok">  ✓ Build success → out/main.fkb</span></span>
+                                <span class="term-line"><span class="term-prompt">$ </span><span class="term-cursor"></span></span>
+                            </div>
+                            <div class="term-scan"></div>
+                            <div class="term-glow-line"></div>
+                        </div>
+                        <i class="fa-solid fa-lock security-icon-bg"></i>
+                        <div class="project-thumb-gradient" style="background:linear-gradient(135deg,rgba(236,72,153,0.06),rgba(139,92,246,0.06));"></div>
+                    </div>
+                    <div class="project-body">
+                        <div class="project-tags">
+                            <span class="tag tag-pink">Fëkìér</span>
+                            <span class="tag tag-blue">Security</span>
+                        </div>
+                        <h3 data-i18n="proj3-title">Security Language Design</h3>
+                        <p data-i18n="proj3-desc">독자적인 보안 언어 Fëkìér의 설계 및 프로토타입 구현.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PROCESS -->
+        <section class="process-section">
+            <div class="section-tag">How We Work</div>
+            <h2 class="section-title reveal" data-i18n="process-title">프로젝트 진행 방식</h2>
+
+            <div class="process-steps">
+                <div class="process-step reveal">
+                    <div class="step-num">01</div>
+                    <div class="step-content">
+                        <h3 data-i18n="step1-title">상담 및 기획</h3>
+                        <p data-i18n="step1-desc">아이디어 단계에서도 상담 가능합니다. 목표와 요구사항을 함께 정리하고 최적의 기술 방향을 제안합니다.</p>
+                    </div>
+                    <i class="fa-solid fa-arrow-right step-arrow"></i>
+                </div>
+                <div class="process-step reveal reveal-delay-1">
+                    <div class="step-num">02</div>
+                    <div class="step-content">
+                        <h3 data-i18n="step2-title">설계 및 디자인</h3>
+                        <p data-i18n="step2-desc">아키텍처 설계부터 UI/UX 프로토타입까지 세밀하게 구성합니다.</p>
+                    </div>
+                    <i class="fa-solid fa-arrow-right step-arrow"></i>
+                </div>
+                <div class="process-step reveal reveal-delay-2">
+                    <div class="step-num">03</div>
+                    <div class="step-content">
+                        <h3 data-i18n="step3-title">개발 및 구현</h3>
+                        <p data-i18n="step3-desc">최신 기술 스택으로 고성능 결과물을 개발합니다. 진행 상황을 실시간 공유합니다.</p>
+                    </div>
+                    <i class="fa-solid fa-arrow-right step-arrow"></i>
+                </div>
+                <div class="process-step reveal reveal-delay-3">
+                    <div class="step-num">04</div>
+                    <div class="step-content">
+                        <h3 data-i18n="step4-title">배포 및 유지보수</h3>
+                        <p data-i18n="step4-desc">완료 후 일정 기간 기술 결함 및 간단한 수정을 무상 지원합니다.</p>
+                    </div>
+                    <i class="fa-solid fa-arrow-right step-arrow"></i>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ -->
+        <section class="faq-section">
+            <div class="section-tag">FAQ</div>
+            <h2 class="section-title reveal" data-i18n="faq-title">자주 묻는 질문</h2>
+
+            <div class="faq-list reveal">
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h4 data-i18n="faq1-q">제작 기간은 얼마나 걸리나요?</h4>
+                        <div class="faq-icon"><i class="fa-solid fa-plus"></i></div>
+                    </div>
+                    <div class="faq-answer"><p data-i18n="faq1-a">단순 랜딩 페이지는 1주일 내외, 복잡한 AI 기능이 포함된 경우 3~4주 정도 소요됩니다.</p></div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h4 data-i18n="faq2-q">유지보수도 지원하나요?</h4>
+                        <div class="faq-icon"><i class="fa-solid fa-plus"></i></div>
+                    </div>
+                    <div class="faq-answer"><p data-i18n="faq2-a">네, 완료 후에도 기술 결함이나 간단한 수정은 일정 기간 무상 지원합니다.</p></div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h4 data-i18n="faq3-q">기획안이 없어도 의뢰 가능한가요?</h4>
+                        <div class="faq-icon"><i class="fa-solid fa-plus"></i></div>
+                    </div>
+                    <div class="faq-answer"><p data-i18n="faq3-a">아이디어 단계만 있어도 상담을 통해 기획과 기술 제안을 해드립니다.</p></div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h4 data-i18n="faq4-q">개발 비용은 어느정도 돼나요?</h4>
+                        <div class="faq-icon"><i class="fa-solid fa-plus"></i></div>
+                    </div>
+                    <div class="faq-answer"><p data-i18n="faq4-a">보통 사이트는 무료로 지원해주지만, 대규모 프로젝트는 별도 협의 후 결정합니다.</p></div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h4 data-i18n="faq5-q">직원은 어떤 기준으로 뽑나요?</h4>
+                        <div class="faq-icon"><i class="fa-solid fa-plus"></i></div>
+                    </div>
+                    <div class="faq-answer"><p data-i18n="faq5-a">경험자를 우선하며, 저희와 함께 개발했던 분들도 일정 확률로 채용합니다.</p></div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h4 data-i18n="faq6-q">어떤 종류의 사이트를 제작하나요?</h4>
+                        <div class="faq-icon"><i class="fa-solid fa-plus"></i></div>
+                    </div>
+                    <div class="faq-answer"><p data-i18n="faq6-a">일반적인 사이트부터 게임 요소가 가미된 인터랙티브 경험까지 다양한 제작이 가능합니다.</p></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="cta-section">
+            <div class="section-tag" style="justify-content:center;">Start a Project</div>
+            <h2 class="reveal" data-i18n="cta-title">아이디어가 있다면,<br>지금 시작하세요.</h2>
+            <p class="reveal reveal-delay-1" data-i18n="cta-sub">어떤 단계에 있든, 무료 상담으로 시작합니다.</p>
+            <div class="reveal reveal-delay-2">
+                <a class="btn-primary" onclick="goTo('contact')"><span data-i18n="cta-btn">무료 상담 신청하기</span></a>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- ========= SERVICES PAGE ========= -->
+    <div class="page" id="page-services">
+        <div class="services-hero">
+            <div class="section-tag">What We Do</div>
+            <h1 class="reveal">OUR<br><span style="background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;" data-i18n="services-h1-line2">SERVICES</span></h1>
+            <p style="color:var(--muted);font-size:1.1rem;max-width:500px;line-height:1.8;" class="reveal reveal-delay-1" data-i18n="services-sub">게임 로직부터 웹 개발, 보안 솔루션까지 —<br>모든 기술 영역을 한 팀에서 해결합니다.</p>
+        </div>
+
+        <div class="services-list">
+            <div class="service-row reveal">
+                <div>
+                    <div class="service-num">01 / WEB DEVELOPMENT</div>
+                    <h2 data-i18n="svc1-title">웹사이트 &<br>랜딩 페이지</h2>
+                    <p data-i18n="svc1-desc">목적에 맞는 고퀄리티 웹사이트를 제작합니다. 포트폴리오, 서비스 소개, 이커머스 등 다양한 형태로 제작 가능하며 반응형 디자인과 최신 웹 기술을 적용합니다.</p>
+                    <div class="service-features">
+                        <span class="feature-tag">반응형 디자인</span>
+                        <span class="feature-tag">SEO 최적화</span>
+                        <span class="feature-tag">성능 최적화</span>
+                        <span class="feature-tag">CMS 연동</span>
+                    </div>
+                </div>
+                <div class="service-visual reveal reveal-delay-1">
+                    <i class="fa-solid fa-globe" style="font-size:6rem;"></i>
+                </div>
+            </div>
+
+            <div class="service-row reverse reveal">
+                <div>
+                    <div class="service-num">02 / GAME DEVELOPMENT</div>
+                    <h2 data-i18n="svc2-title">게임 로직 &<br>AI 시스템</h2>
+                    <p data-i18n="svc2-desc">Unity와 C#을 기반으로 고성능 게임 로직을 설계합니다. 공포 게임의 몰입형 AI, 복잡한 타이머 시스템, 플레이어 행동 분석 모듈까지 개발합니다.</p>
+                    <div class="service-features">
+                        <span class="feature-tag">Unity C#</span>
+                        <span class="feature-tag">AI NPC</span>
+                        <span class="feature-tag">Physics System</span>
+                        <span class="feature-tag">UI/HUD</span>
+                    </div>
+                </div>
+                <div class="service-visual reveal reveal-delay-1">
+                    <i class="fa-solid fa-gamepad" style="font-size:6rem;"></i>
+                </div>
+            </div>
+
+            <div class="service-row reveal">
+                <div>
+                    <div class="service-num">03 / 3D WEB</div>
+                    <h2 data-i18n="svc3-title">브라우저 3D &<br>인터랙티브</h2>
+                    <p data-i18n="svc3-desc">WebGL과 순수 JavaScript로 브라우저에서 구동되는 3D 복셀 엔진과 인터랙티브 경험을 구축합니다. 플러그인 없이, 웹만으로 가능한 모든 것을 만듭니다.</p>
+                    <div class="service-features">
+                        <span class="feature-tag">WebGL</span>
+                        <span class="feature-tag">Three.js</span>
+                        <span class="feature-tag">Voxel Engine</span>
+                        <span class="feature-tag">Canvas API</span>
+                    </div>
+                </div>
+                <div class="service-visual reveal reveal-delay-1">
+                    <i class="fa-solid fa-cube" style="font-size:6rem;"></i>
+                </div>
+            </div>
+
+            <div class="service-row reverse reveal">
+                <div>
+                    <div class="service-num">04 / SECURITY</div>
+                    <h2 data-i18n="svc4-title">보안 솔루션 &<br>Fëkìér</h2>
+                    <p data-i18n="svc4-desc">독자 개발한 보안 언어 Fëkìér를 통한 기술적 보안 솔루션을 제공합니다. 코드 레벨부터 시스템 설계까지 보안을 내재화합니다.</p>
+                    <div class="service-features">
+                        <span class="feature-tag">Fëkìér Language</span>
+                        <span class="feature-tag">암호화</span>
+                        <span class="feature-tag">취약점 분석</span>
+                        <span class="feature-tag">보안 설계</span>
+                    </div>
+                </div>
+                <div class="service-visual reveal reveal-delay-1">
+                    <i class="fa-solid fa-shield-halved" style="font-size:6rem;"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <section class="cta-section">
+            <div class="section-tag" style="justify-content:center;">Get Started</div>
+            <h2 class="reveal" data-i18n="svc-cta-title">원하는 서비스가 있나요?</h2>
+            <p class="reveal reveal-delay-1" data-i18n="svc-cta-sub">지금 무료 상담으로 프로젝트를 시작하세요.</p>
+            <div class="reveal reveal-delay-2">
+                <a class="btn-primary" onclick="goTo('contact')"><span data-i18n="cta-btn">무료 상담 신청하기</span></a>
+            </div>
+        </section>
+    </div>
+
+    <!-- ========= CONTACT PAGE ========= -->
+    <div class="page" id="page-contact">
+        <div class="contact-hero">
+            <div>
+                <div class="section-tag">Contact Us</div>
+                <h1 class="reveal" data-i18n="contact-title">함께<br>만들어봐요.</h1>
+                <p class="reveal reveal-delay-1" data-i18n="contact-sub">어떤 단계에 있든 상관없습니다. 아이디어가 있다면 지금 연락해주세요.</p>
+
+                <div class="contact-info reveal reveal-delay-2">
+                    <div class="contact-item">
+                        <div class="contact-item-icon"><i class="fa-solid fa-envelope"></i></div>
+                        <div class="contact-item-text">
+                            <span>Email</span>
+                            <span>marstaiwebstudio@gmail.com</span>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-item-icon"><i class="fa-brands fa-discord"></i></div>
+                        <div class="contact-item-text">
+                            <span>Discord</span>
+                            <span>Marst AI Studio</span>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="contact-item-icon"><i class="fa-solid fa-clock"></i></div>
+                        <div class="contact-item-text">
+                            <span data-i18n="contact-response-label">평균 응답 시간</span>
+                            <span data-i18n="contact-response-val">24시간 이내</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="contact-form reveal reveal-delay-1">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="form-name">이름</label>
+                        <input type="text" placeholder="홍길동">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="form-email">이메일</label>
+                        <input type="email" placeholder="hello@example.com">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="form-service">서비스 종류</label>
+                    <select>
+                        <option data-i18n="form-select">선택해주세요</option>
+                        <option data-i18n="form-opt1">웹사이트 제작</option>
+                        <option data-i18n="form-opt2">게임 로직 개발</option>
+                        <option data-i18n="form-opt3">3D 웹 / 인터랙티브</option>
+                        <option data-i18n="form-opt4">보안 솔루션</option>
+                        <option data-i18n="form-opt5">기타</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="form-msg">프로젝트 내용</label>
+                    <textarea placeholder="어떤 것을 만들고 싶으신가요? 자유롭게 적어주세요."></textarea>
+                </div>
+                <button class="btn-primary" style="width:100%;justify-content:center;" onclick="submitForm()">
+                    <span data-i18n="form-submit">상담 신청하기 →</span>
+                </button>
+                <p style="font-size:0.75rem;color:var(--muted);text-align:center;margin-top:16px;" data-i18n="form-note">무료 상담 · 24시간 이내 응답</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========= TEAM PAGE ========= -->
+    <div class="page" id="page-team">
+
+        <div class="team-hero">
+            <div class="section-tag" data-i18n="team-tag">Who We Are</div>
+            <h1 class="reveal" data-i18n="team-title">열정으로 움직이는<br><span style="background:linear-gradient(135deg,var(--blue),var(--purple),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">우리 팀</span></h1>
+            <p class="reveal reveal-delay-1" data-i18n="team-sub">기술과 창의성을 무기로, 한계 없는 디지털 경험을 만들어갑니다.</p>
+        </div>
+
+        <section style="padding-top:0;">
+            <div class="team-grid">
+                <!-- Member 1 -->
+                <div class="team-card reveal">
+                    <div class="team-card-avatar" style="background:var(--bg2);">
+                        <div class="team-card-avatar-glow" style="background:var(--blue);"></div>
+                        <div class="team-card-avatar-bg" style="background:radial-gradient(circle at 50% 50%, var(--blue), transparent);"></div>
+                        <div class="team-card-avatar-inner" style="background:linear-gradient(135deg,rgba(59,130,246,0.3),rgba(139,92,246,0.3));">MA</div>
+                    </div>
+                    <div class="team-card-body">
+                        <h3 data-i18n="m1-name">Marst</h3>
+                        <div class="team-role" data-i18n="m1-role">Founder · Lead Developer</div>
+                        <p class="team-bio" data-i18n="m1-bio">스튜디오 창립자. AI 게임 로직, 보안 언어 Fëkìér 설계, 3D 웹 엔진까지 전반을 이끕니다.</p>
+                        <div class="team-skills">
+                            <span class="team-skill">HTML/CSS</span>
+                            <span class="team-skill">JavaScript</span>
+                            <span class="team-skill">Database</span>
+                            <span class="team-skill">AI</span>
+                        </div>
+                        <div class="team-social">
+                            <a href="https://github.com/marstai" target="_blank" rel="noopener" title="GitHub"><i class="fa-brands fa-github"></i></a>
+                            <a href="#" target="_blank" rel="noopener" title="Discord"><i class="fa-brands fa-discord"></i></a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- VALUES -->
+        <div class="team-values">
+            <div class="team-values-inner">
+                <div class="section-tag" data-i18n="values-tag">Our Values</div>
+                <h2 class="section-title reveal" data-i18n="values-title">우리가 일하는 방식</h2>
+                <div class="values-grid">
+                    <div class="reveal">
+                        <span class="value-icon">⚡</span>
+                        <h4 data-i18n="v1-title">빠른 실행</h4>
+                        <p data-i18n="v1-desc">완벽한 계획보다 빠른 시도. 만들고, 테스트하고, 개선합니다.</p>
+                    </div>
+                    <div class="reveal reveal-delay-1">
+                        <span class="value-icon">🔍</span>
+                        <h4 data-i18n="v2-title">깊은 탐구</h4>
+                        <p data-i18n="v2-desc">표면이 아닌 본질까지. 기술의 가장 깊은 레이어를 파고듭니다.</p>
+                    </div>
+                    <div class="reveal reveal-delay-2">
+                        <span class="value-icon">🤝</span>
+                        <h4 data-i18n="v3-title">투명한 소통</h4>
+                        <p data-i18n="v3-desc">클라이언트와 팀원 모두에게 진행 상황을 솔직하게 공유합니다.</p>
+                    </div>
+                    <div class="reveal reveal-delay-3">
+                        <span class="value-icon">🚀</span>
+                        <h4 data-i18n="v4-title">경계를 넘어</h4>
+                        <p data-i18n="v4-desc">"불가능"이라는 말 대신 "어떻게 할까"를 묻습니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <section class="cta-section">
+            <div class="section-tag" style="justify-content:center;">Join Us</div>
+            <h2 class="reveal" data-i18n="team-cta-title">팀에 합류하고 싶으신가요?</h2>
+            <p class="reveal reveal-delay-1" data-i18n="team-cta-sub">현재 열정 있는 개발자를 찾고 있습니다.</p>
+            <div class="reveal reveal-delay-2">
+                <a class="btn-primary" onclick="goTo('careers')"><span data-i18n="team-cta-btn">채용 공고 보기</span></a>
+            </div>
+        </section>
+    </div>
+
+    <!-- ========= CAREERS PAGE ========= -->
+    <div class="page" id="page-careers">
+
+        <div class="careers-hero">
+            <div class="section-tag" data-i18n="careers-tag">Join Marst AI</div>
+            <h1 class="reveal">
+                <span data-i18n="careers-h1-1">함께 만들</span><br>
+                <span style="background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;" data-i18n="careers-h1-2">어갈 사람</span>
+            </h1>
+            <p class="reveal reveal-delay-1" data-i18n="careers-sub">경험보다 열정을 봅니다. 함께 개발한 경험이 있다면 더욱 환영합니다.</p>
+        </div>
+
+        <!-- OPEN POSITIONS -->
+        <section class="careers-section" style="padding-top:0;">
+            <div class="section-tag" data-i18n="jobs-tag">Open Positions</div>
+            <h2 class="section-title reveal" data-i18n="jobs-title">채용 공고</h2>
+
+            <div class="job-list">
+                <div class="job-card reveal" onclick="scrollToApply()">
+                    <div class="job-card-left">
+                        <div class="job-type-row">
+                            <span class="job-type job-type-open" data-i18n="jtype-open">모집 중</span>
+                            <span class="job-dept">FRONTEND</span>
+                        </div>
+                        <h3 data-i18n="j1-title">웹 프론트엔드 개발자</h3>
+                        <p data-i18n="j1-desc">인터랙티브 웹사이트와 랜딩 페이지 개발. HTML/CSS/JS를 능숙하게 다루며 아름다운 UI에 관심 있는 분을 찾습니다.</p>
+                        <div class="job-tags">
+                            <span class="tag tag-blue">HTML/CSS</span>
+                            <span class="tag tag-blue">JavaScript</span>
+                            <span class="tag tag-purple">Animation</span>
+                        </div>
+                    </div>
+                    <div class="job-card-right">
+                        <div class="job-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                    </div>
+                </div>
+
+                <div class="job-card reveal reveal-delay-1" onclick="scrollToApply()">
+                    <div class="job-card-left">
+                        <div class="job-type-row">
+                            <span class="job-type job-type-open" data-i18n="jtype-open">모집 중</span>
+                            <span class="job-dept">GAME DEV</span>
+                        </div>
+                        <h3 data-i18n="j2-title">Unity / C# 게임 개발자</h3>
+                        <p data-i18n="j2-desc">Unity 기반 게임 로직 및 AI 시스템 개발. 공포 게임 특화 경험이 있으면 우대합니다.</p>
+                        <div class="job-tags">
+                            <span class="tag tag-cyan">Unity</span>
+                            <span class="tag tag-cyan">C#</span>
+                            <span class="tag tag-purple">AI Module</span>
+                        </div>
+                    </div>
+                    <div class="job-card-right">
+                        <div class="job-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                    </div>
+                </div>
+
+                <div class="job-card reveal reveal-delay-2" onclick="scrollToApply()">
+                    <div class="job-card-left">
+                        <div class="job-type-row">
+                            <span class="job-type job-type-intern" data-i18n="jtype-intern">인턴십</span>
+                            <span class="job-dept">AI / BACKEND</span>
+                        </div>
+                        <h3 data-i18n="j3-title">AI · Python 개발자 인턴</h3>
+                        <p data-i18n="j3-desc">Python 기반 AI 모듈 개발 및 백엔드 지원. 학생도 지원 가능하며 실무 경험을 쌓을 수 있습니다.</p>
+                        <div class="job-tags">
+                            <span class="tag tag-pink">Python</span>
+                            <span class="tag tag-pink">AI/ML</span>
+                            <span class="tag tag-blue">Backend</span>
+                        </div>
+                    </div>
+                    <div class="job-card-right">
+                        <div class="job-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                    </div>
+                </div>
+
+                <div class="job-card reveal reveal-delay-3" onclick="scrollToApply()">
+                    <div class="job-card-left">
+                        <div class="job-type-row">
+                            <span class="job-type job-type-collab" data-i18n="jtype-collab">협업</span>
+                            <span class="job-dept">SECURITY</span>
+                        </div>
+                        <h3 data-i18n="j4-title">보안 · 언어 설계 협업자</h3>
+                        <p data-i18n="j4-desc">Fëkìér 보안 언어 확장 개발 및 취약점 분석 협업. 컴파일러 이론 또는 보안 관심자 우대.</p>
+                        <div class="job-tags">
+                            <span class="tag tag-purple">Security</span>
+                            <span class="tag tag-purple">Fëkìér</span>
+                            <span class="tag tag-pink">Compiler</span>
+                        </div>
+                    </div>
+                    <div class="job-card-right">
+                        <div class="job-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                    </div>
+                </div>
+
+                <div class="job-card reveal" onclick="scrollToApply()">
+                    <div class="job-card-left">
+                        <div class="job-type-row">
+                            <span class="job-type job-type-open" data-i18n="jtype-open">모집 중</span>
+                            <span class="job-dept">PLANNING</span>
+                        </div>
+                        <h3 data-i18n="j5-title">아이디어 기획자</h3>
+                        <p data-i18n="j5-desc">새로운 서비스·콘텐츠 아이디어를 발굴하고 기획서로 구체화하는 역할. 창의적인 사고와 UX 감각을 지닌 분을 찾습니다.</p>
+                        <div class="job-tags">
+                            <span class="tag tag-blue">Planning</span>
+                            <span class="tag tag-cyan">Creative</span>
+                            <span class="tag tag-purple">UX</span>
+                        </div>
+                    </div>
+                    <div class="job-card-right">
+                        <div class="job-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PERKS -->
+        <div class="careers-perks">
+            <div class="careers-perks-inner">
+                <div class="section-tag" data-i18n="perks-tag">Why Join Us</div>
+                <h2 class="section-title reveal" data-i18n="perks-title">함께하면 좋은 이유</h2>
+                <div class="perks-grid">
+                    <div class="perk-card reveal">
+                        <span class="perk-icon">🌱</span>
+                        <h4 data-i18n="p1-title">실전 경험</h4>
+                        <p data-i18n="p1-desc">실제 클라이언트 프로젝트에 바로 투입됩니다. 포트폴리오가 빠르게 쌓입니다.</p>
+                    </div>
+                    <div class="perk-card reveal reveal-delay-1">
+                        <span class="perk-icon">🧠</span>
+                        <h4 data-i18n="p2-title">자율적인 환경</h4>
+                        <p data-i18n="p2-desc">출퇴근 없이 원격으로 진행합니다. 결과로 말하는 문화를 지향합니다.</p>
+                    </div>
+                    <div class="perk-card reveal reveal-delay-2">
+                        <span class="perk-icon">🔧</span>
+                        <h4 data-i18n="p3-title">기술 성장</h4>
+                        <p data-i18n="p3-desc">AI, 게임, 보안, 3D 웹까지 다양한 기술 스택을 직접 다루며 성장합니다.</p>
+                    </div>
+                    <div class="perk-card reveal">
+                        <span class="perk-icon">💬</span>
+                        <h4 data-i18n="p4-title">평등한 소통</h4>
+                        <p data-i18n="p4-desc">직급 없이 아이디어로 소통합니다. 좋은 아이디어라면 누구든 반영됩니다.</p>
+                    </div>
+                    <div class="perk-card reveal reveal-delay-1">
+                        <span class="perk-icon">📈</span>
+                        <h4 data-i18n="p5-title">정식 채용 연계</h4>
+                        <p data-i18n="p5-desc">함께 일한 분들은 팀 성장 시 정식 멤버로 우선 합류합니다.</p>
+                    </div>
+                    <div class="perk-card reveal reveal-delay-2">
+                        <span class="perk-icon">🎯</span>
+                        <h4 data-i18n="p6-title">명확한 목표</h4>
+                        <p data-i18n="p6-desc">매 프로젝트마다 명확한 목표와 역할. 흐지부지되는 일이 없습니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- APPLY FORM -->
+        <section class="apply-form-section" id="apply-section">
+            <div class="section-tag" data-i18n="apply-tag">Apply Now</div>
+            <h2 class="section-title reveal" data-i18n="apply-title">지원하기</h2>
+            <div class="apply-form reveal reveal-delay-1">
+                <h3 data-i18n="apply-form-title">함께하고 싶으신가요?</h3>
+                <p data-i18n="apply-form-sub">포지션에 상관없이 관심 있다면 언제든 연락주세요. 모든 지원서를 검토합니다.</p>
+
+                <div class="form-row form-group">
+                    <div class="form-group" style="margin-bottom:0">
+                        <label data-i18n="form-name">이름</label>
+                        <input type="text" id="apply-name" placeholder="홍길동">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0">
+                        <label data-i18n="form-email">이메일</label>
+                        <input type="email" id="apply-email" placeholder="hello@example.com">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="apply-position-label">지원 포지션</label>
+                    <select id="apply-position">
+                        <option data-i18n="form-select">선택해주세요</option>
+                        <option data-i18n="apply-opt1">웹 프론트엔드 개발자</option>
+                        <option data-i18n="apply-opt2">Unity / C# 게임 개발자</option>
+                        <option data-i18n="apply-opt3">AI · Python 인턴</option>
+                        <option data-i18n="apply-opt4">보안 · 언어 설계 협업</option>
+                        <option data-i18n="apply-opt6">아이디어 기획자</option>
+                        <option data-i18n="apply-opt5">기타 (자유 지원)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="apply-portfolio-label">포트폴리오 / GitHub (선택)</label>
+                    <input type="url" id="apply-portfolio" placeholder="https://github.com/yourname">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="apply-intro-label">자기소개</label>
+                    <textarea id="apply-intro" style="height:160px;" placeholder="어떤 것을 만들어왔고, 왜 Marst AI에 합류하고 싶은지 자유롭게 적어주세요."></textarea>
+                </div>
+                <a class="btn-primary" onclick="submitApply()" style="width:100%;display:flex;justify-content:center;">
+                    <span data-i18n="apply-submit">지원서 제출하기 →</span>
+                </a>
+                <p style="text-align:center;font-size:0.75rem;color:var(--muted);margin-top:16px;font-family:var(--font-mono);" data-i18n="apply-note">모든 지원서를 검토하며 5일 이내 연락드립니다.</p>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-inner">
+            <div class="footer-logo">MARST <span>AI</span></div>
+            <div class="footer-links">
+                <a onclick="goTo('home')">Home</a>
+                <a onclick="goTo('services')">Services</a>
+                <a onclick="goTo('contact')">Contact</a>
+            </div>
+            <div class="footer-sns">
+                <a href="https://github.com/marstai" target="_blank" rel="noopener" title="GitHub"><i class="fa-brands fa-github"></i></a>
+                <a href="#" target="_blank" rel="noopener" title="Discord"><i class="fa-brands fa-discord"></i></a>
+                <a href="#" target="_blank" rel="noopener" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+            </div>
+            <div class="footer-copy">© 2026 Marst AI Web Studio. All Rights Reserved.</div>
+        </div>
+    </footer>
+
+    <script>
+    // ===== MOBILE MENU =====
+    (function() {
+        var btn = document.getElementById('mobileMenuBtn');
+        var overlay = document.getElementById('mobile-menu-overlay');
+
+        function openMobileMenu() {
+            btn.classList.add('open');
+            overlay.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        window.closeMobileMenu = function() {
+            btn.classList.remove('open');
+            overlay.classList.remove('open');
+            document.body.style.overflow = '';
+        };
+
+        if (btn) {
+            btn.addEventListener('click', function() {
+                if (overlay.classList.contains('open')) {
+                    closeMobileMenu();
+                } else {
+                    openMobileMenu();
+                }
+            });
+        }
+
+        // Sync mobile theme icon with desktop theme toggle
+        var origToggleTheme = window.toggleTheme;
+        window.toggleTheme = function() {
+            origToggleTheme();
+            syncMobileThemeIcon();
+        };
+
+        function syncMobileThemeIcon() {
+            var mobileIcon = document.getElementById('mobileThemeIcon');
+            var mobileLabel = document.getElementById('mobileThemeLabel');
+            var isLight = document.body.classList.contains('light-mode');
+            if (mobileIcon) mobileIcon.className = isLight ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+            if (mobileLabel) mobileLabel.textContent = isLight ? '다크 모드' : '라이트 모드';
+        }
+
+        // Initial sync after load
+        window.addEventListener('load', syncMobileThemeIcon);
+    })();
+
+    // ===== CURSOR =====
+    const cursor = document.getElementById('cursor');
+    const ring = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+    function animateCursor() {
+        cursor.style.left = mx - 5 + 'px';
+        cursor.style.top = my - 5 + 'px';
+        rx += (mx - rx - 18) * 0.12;
+        ry += (my - ry - 18) * 0.12;
+        ring.style.left = rx + 'px';
+        ring.style.top = ry + 'px';
+        requestAnimationFrame(animateCursor);
+    }
+    animateCursor();
+    document.querySelectorAll('a,button,.btn-primary,.btn-ghost,.lang-btn,.faq-question,.project-card,.card,.stack-item,.contact-item,.footer-links a,.nav-links a,#back-to-top,.footer-sns a,.team-social a').forEach(el => {
+        el.addEventListener('mouseenter', () => { cursor.style.transform = 'scale(2.5)'; ring.style.transform = 'scale(1.5)'; });
+        el.addEventListener('mouseleave', () => { cursor.style.transform = 'scale(1)'; ring.style.transform = 'scale(1)'; });
+    });
+
+    // ===== HERO PARTICLE CANVAS =====
+    (function() {
+        const canvas = document.getElementById('heroParticleCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let W, H, particles = [], mouse = { x: -9999, y: -9999 };
+        const COUNT = 70;
+        const COLORS = [
+            [59, 130, 246],   // --blue
+            [6, 182, 212],    // --cyan
+            [139, 92, 246],   // --purple
+        ];
+
+        function resize() {
+            W = canvas.width  = canvas.offsetWidth;
+            H = canvas.height = canvas.offsetHeight;
+        }
+
+        function randomParticle() {
+            const c = COLORS[Math.floor(Math.random() * COLORS.length)];
+            return {
+                x: Math.random() * W,
+                y: Math.random() * H,
+                vx: (Math.random() - 0.5) * 0.45,
+                vy: (Math.random() - 0.5) * 0.45,
+                r: 1.2 + Math.random() * 2.2,
+                alpha: 0.25 + Math.random() * 0.45,
+                c: c,
+            };
+        }
+
+        function init() {
+            resize();
+            particles = [];
+            for (let i = 0; i < COUNT; i++) particles.push(randomParticle());
+        }
+
+        window.addEventListener('mousemove', e => {
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = e.clientX - rect.left;
+            mouse.y = e.clientY - rect.top;
+        });
+        window.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+
+        let paused = false;
+        document.addEventListener('visibilitychange', () => { paused = document.hidden; });
+
+        let raf;
+        function draw() {
+            raf = requestAnimationFrame(draw);
+            if (paused) return;
+            ctx.clearRect(0, 0, W, H);
+
+            for (let p of particles) {
+                // Mouse repulsion
+                const dx = p.x - mouse.x;
+                const dy = p.y - mouse.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const REPEL_R = 100;
+                if (dist < REPEL_R && dist > 0) {
+                    const force = (REPEL_R - dist) / REPEL_R * 0.3;
+                    p.vx += (dx / dist) * force;
+                    p.vy += (dy / dist) * force;
+                }
+
+                // Speed limit
+                const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+                if (speed > 2.5) { p.vx = (p.vx / speed) * 2.5; p.vy = (p.vy / speed) * 2.5; }
+
+                // Damping
+                p.vx *= 0.98;
+                p.vy *= 0.98;
+
+                p.x += p.vx;
+                p.y += p.vy;
+
+                // Wrap around
+                if (p.x < -10) p.x = W + 10;
+                if (p.x > W + 10) p.x = -10;
+                if (p.y < -10) p.y = H + 10;
+                if (p.y > H + 10) p.y = -10;
+
+                // Draw particle
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${p.c[0]},${p.c[1]},${p.c[2]},${p.alpha})`;
+                ctx.fill();
+            }
+
+            // Draw connecting lines
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const a = particles[i], b = particles[j];
+                    const dx = a.x - b.x, dy = a.y - b.y;
+                    const d = Math.sqrt(dx * dx + dy * dy);
+                    if (d < 120) {
+                        const alpha = (1 - d / 120) * 0.1;
+                        ctx.beginPath();
+                        ctx.moveTo(a.x, a.y);
+                        ctx.lineTo(b.x, b.y);
+                        ctx.strokeStyle = `rgba(59,130,246,${alpha})`;
+                        ctx.lineWidth = 0.6;
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        window.addEventListener('resize', () => { cancelAnimationFrame(raf); init(); draw(); });
+        init();
+        draw();
+    })();
+
+    // ===== THEME TOGGLE (Dark/Light) =====
+    (function() {
+        const STORAGE_KEY = 'marst-theme';
+        const btn = document.getElementById('themeToggleBtn');
+        const icon = document.getElementById('themeIcon');
+
+        function applyTheme(mode) {
+            if (mode === 'light') {
+                document.body.classList.add('light-mode');
+                if (icon) { icon.className = 'fa-solid fa-sun'; }
+            } else {
+                document.body.classList.remove('light-mode');
+                if (icon) { icon.className = 'fa-solid fa-moon'; }
+            }
+            try { localStorage.setItem(STORAGE_KEY, mode); } catch(e) {}
+        }
+
+        window.toggleTheme = function() {
+            const isLight = document.body.classList.contains('light-mode');
+            applyTheme(isLight ? 'dark' : 'light');
+        };
+
+        // Restore from localStorage
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) applyTheme(saved);
+        } catch(e) {}
+    })();
+
+    // ===== NAV SCROLL =====
+    window.addEventListener('scroll', () => {
+        document.getElementById('main-nav').classList.toggle('scrolled', window.scrollY > 50);
+    });
+
+    // ===== PAGE ROUTING =====
+    function goTo(page) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-' + page).classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(triggerReveal, 100);
+    }
+
+    // ===== REVEAL =====
+    function triggerReveal() {
+        document.querySelectorAll('.page.active .reveal').forEach(el => {
+            const rect = el.getBoundingClientRect();
+            if (rect.top < window.innerHeight - 80) el.classList.add('visible');
+        });
+    }
+    window.addEventListener('scroll', triggerReveal);
+    window.addEventListener('load', triggerReveal);
+
+    // ===== FAQ TOGGLE =====
+    function toggleFaq(btn) {
+        const item = btn.parentElement;
+        const wasOpen = item.classList.contains('open');
+        document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+        if (!wasOpen) item.classList.add('open');
+    }
+
+    // ===== SCROLL TO APPLY =====
+    function scrollToApply() {
+        document.getElementById('apply-section').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ===== FORM SUBMIT =====
+    function submitForm() {
+        const form = event.target.closest('.contact-form') || event.target.closest('div');
+        const nameEl = document.querySelector('.contact-form input[type="text"]');
+        const emailEl = document.querySelector('.contact-form input[type="email"]');
+        const serviceEl = document.querySelector('.contact-form select');
+        const msgEl = document.querySelector('.contact-form textarea');
+        const name = nameEl ? nameEl.value : '';
+        const email = emailEl ? emailEl.value : '';
+        const service = serviceEl ? serviceEl.options[serviceEl.selectedIndex].text : '';
+        const msg = msgEl ? msgEl.value : '';
+        const subject = encodeURIComponent('[Marst AI 상담] ' + (service || '문의'));
+        const body = encodeURIComponent(
+            '이름: ' + name + '\n' +
+            '이메일: ' + email + '\n' +
+            '서비스: ' + service + '\n\n' +
+            '내용:\n' + msg
+        );
+        window.location.href = 'mailto:marstaiwebstudio@gmail.com?subject=' + subject + '&body=' + body;
+        const btn = event.target.closest('button');
+        const span = btn ? btn.querySelector('span') : null;
+        if (span) {
+            span.textContent = '✓ 메일 앱이 열립니다!';
+            btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            setTimeout(() => {
+                span.setAttribute('data-i18n', 'form-submit');
+                applyLang(currentLang);
+                btn.style.background = '';
+            }, 3000);
+        }
+    }
+
+    // ===== I18N =====
+    let currentLang = 'ko';
+    const i18n = {
+        ko: {
+            badge: 'AI + Web Studio · Since 2024',
+            'hero-h1-line2': 'CREATIVITY',
+            'hero-desc': '기술적 한계를 창의성으로 돌파하며,<br>AI와 Web의 융합으로 새로운 디지털 세계를 구축합니다.',
+            'btn-services': '서비스 보기',
+            'btn-contact': '무료 상담하기',
+            stat1: '완료 프로젝트', stat2: '핵심 기술 분야', stat3: '창의적 가능성', stat4: '기술 지원',
+            'expertise-title': '기술을 넘어\n경험을 설계합니다',
+            'expertise-sub': '세 가지 핵심 영역에서 독보적인 기술력으로 디지털 경험의 새 기준을 만듭니다.',
+            'exp1-title': 'Game Logic', 'exp1-desc': 'Unity & C# 기반의 고성능 엔진 최적화 및 공포 게임의 몰입형 시스템 설계. AI 모듈로 플레이어 경험을 극대화합니다.',
+            'exp2-title': 'Web Voxel', 'exp2-desc': 'HTML/JS를 활용한 브라우저 기반 복셀 엔진 프로토타이핑 및 3D 웹 렌더링. 웹의 경계를 확장합니다.',
+            'exp3-title': 'Forensics', 'exp3-desc': '독자적인 보안 언어 Fëkìér 설계를 통한 기술적 보안 솔루션 제공. 코드의 가장 깊은 레이어까지 보호합니다.',
+            'stack-title': '도구가 아닌,\n무기를 다룹니다',
+            'works-title': '주요 작업물', 'works-more': '모두 보기 →',
+            'proj1-title': 'AI Horror Game Logic', 'proj1-desc': '플레이어의 행동을 분석해 긴장감을 유도하는 AI 모듈과 고도화된 타이머 UI 시스템을 결합한 실전 게임 로직입니다.',
+            'proj2-title': 'Browser Voxel Engine', 'proj2-desc': '브라우저에서 실시간으로 구동되는 3D 복셀 엔진 프로토타입.',
+            'proj3-title': 'Security Language Design', 'proj3-desc': '독자적인 보안 언어 Fëkìér의 설계 및 프로토타입 구현.',
+            'process-title': '프로젝트 진행 방식',
+            'step1-title': '상담 및 기획', 'step1-desc': '아이디어 단계에서도 상담 가능합니다. 목표와 요구사항을 함께 정리하고 최적의 기술 방향을 제안합니다.',
+            'step2-title': '설계 및 디자인', 'step2-desc': '아키텍처 설계부터 UI/UX 프로토타입까지 세밀하게 구성합니다.',
+            'step3-title': '개발 및 구현', 'step3-desc': '최신 기술 스택으로 고성능 결과물을 개발합니다. 진행 상황을 실시간 공유합니다.',
+            'step4-title': '배포 및 유지보수', 'step4-desc': '완료 후 일정 기간 기술 결함 및 간단한 수정을 무상 지원합니다.',
+            'faq-title': '자주 묻는 질문',
+            'faq1-q': '제작 기간은 얼마나 걸리나요?', 'faq1-a': '단순 랜딩 페이지는 1주일 내외, 복잡한 AI 기능이 포함된 경우 3~4주 정도 소요됩니다.',
+            'faq2-q': '유지보수도 지원하나요?', 'faq2-a': '네, 완료 후에도 기술 결함이나 간단한 수정은 일정 기간 무상 지원합니다.',
+            'faq3-q': '기획안이 없어도 의뢰 가능한가요?', 'faq3-a': '아이디어 단계만 있어도 상담을 통해 기획과 기술 제안을 해드립니다.',
+            'faq4-q': '개발 비용은 어느정도 돼나요?', 'faq4-a': '보통 사이트는 무료로 지원해주지만, 대규모 프로젝트는 별도 협의 후 결정합니다.',
+            'faq5-q': '직원은 어떤 기준으로 뽑나요?', 'faq5-a': '경험자를 우선하며, 저희와 함께 개발했던 분들도 일정 확률로 채용합니다.',
+            'faq6-q': '어떤 종류의 사이트를 제작하나요?', 'faq6-a': '일반적인 사이트부터 게임 요소가 가미된 인터랙티브 경험까지 다양한 제작이 가능합니다.',
+            'cta-title': '아이디어가 있다면,\n지금 시작하세요.', 'cta-sub': '어떤 단계에 있든, 무료 상담으로 시작합니다.', 'cta-btn': '무료 상담 신청하기',
+            'services-h1-line2': 'SERVICES', 'services-sub': '게임 로직부터 웹 개발, 보안 솔루션까지 —\n모든 기술 영역을 한 팀에서 해결합니다.',
+            'svc1-title': '웹사이트 &\n랜딩 페이지', 'svc1-desc': '목적에 맞는 고퀄리티 웹사이트를 제작합니다. 포트폴리오, 서비스 소개, 이커머스 등 다양한 형태로 제작 가능하며 반응형 디자인과 최신 웹 기술을 적용합니다.',
+            'svc2-title': '게임 로직 &\nAI 시스템', 'svc2-desc': 'Unity와 C#을 기반으로 고성능 게임 로직을 설계합니다. 공포 게임의 몰입형 AI, 복잡한 타이머 시스템, 플레이어 행동 분석 모듈까지 개발합니다.',
+            'svc3-title': '브라우저 3D &\n인터랙티브', 'svc3-desc': 'WebGL과 순수 JavaScript로 브라우저에서 구동되는 3D 복셀 엔진과 인터랙티브 경험을 구축합니다. 플러그인 없이, 웹만으로 가능한 모든 것을 만듭니다.',
+            'svc4-title': '보안 솔루션 &\nFëkìér', 'svc4-desc': '독자 개발한 보안 언어 Fëkìér를 통한 기술적 보안 솔루션을 제공합니다. 코드 레벨부터 시스템 설계까지 보안을 내재화합니다.',
+            'svc-cta-title': '원하는 서비스가 있나요?', 'svc-cta-sub': '지금 무료 상담으로 프로젝트를 시작하세요.',
+            'contact-title': '함께\n만들어봐요.', 'contact-sub': '어떤 단계에 있든 상관없습니다. 아이디어가 있다면 지금 연락해주세요.',
+            'contact-response-label': '평균 응답 시간', 'contact-response-val': '24시간 이내',
+            'form-name': '이름', 'form-email': '이메일', 'form-service': '서비스 종류', 'form-select': '선택해주세요',
+            'form-opt1': '웹사이트 제작', 'form-opt2': '게임 로직 개발', 'form-opt3': '3D 웹 / 인터랙티브', 'form-opt4': '보안 솔루션', 'form-opt5': '기타',
+            'form-msg': '프로젝트 내용', 'form-submit': '상담 신청하기 →', 'form-note': '무료 상담 · 24시간 이내 응답',
+            'team-tag': 'Who We Are',
+            'team-title': '열정으로 움직이는\n우리 팀',
+            'team-sub': '기술과 창의성을 무기로, 한계 없는 디지털 경험을 만들어갑니다.',
+            'm1-name': 'Marst', 'm1-role': 'Founder · Lead Developer',
+            'm1-bio': '스튜디오 창립자. AI 게임 로직, 보안 언어 Fëkìér 설계, 3D 웹 엔진까지 전반을 이끕니다.',
+            'values-tag': 'Our Values', 'values-title': '우리가 일하는 방식',
+            'v1-title': '빠른 실행', 'v1-desc': '완벽한 계획보다 빠른 시도. 만들고, 테스트하고, 개선합니다.',
+            'v2-title': '깊은 탐구', 'v2-desc': '표면이 아닌 본질까지. 기술의 가장 깊은 레이어를 파고듭니다.',
+            'v3-title': '투명한 소통', 'v3-desc': '클라이언트와 팀원 모두에게 진행 상황을 솔직하게 공유합니다.',
+            'v4-title': '경계를 넘어', 'v4-desc': '"불가능"이라는 말 대신 "어떻게 할까"를 묻습니다.',
+            'team-cta-title': '팀에 합류하고 싶으신가요?', 'team-cta-sub': '현재 열정 있는 개발자를 찾고 있습니다.', 'team-cta-btn': '채용 공고 보기',
+            'careers-tag': 'Join Marst AI',
+            'careers-h1-1': '함께 만들', 'careers-h1-2': '어갈 사람',
+            'careers-sub': '경험보다 열정을 봅니다. 함께 개발한 경험이 있다면 더욱 환영합니다.',
+            'jobs-tag': 'Open Positions', 'jobs-title': '채용 공고',
+            'jtype-open': '모집 중', 'jtype-intern': '인턴십', 'jtype-collab': '협업',
+            'j1-title': '웹 프론트엔드 개발자', 'j1-desc': '인터랙티브 웹사이트와 랜딩 페이지 개발. HTML/CSS/JS를 능숙하게 다루며 아름다운 UI에 관심 있는 분을 찾습니다.',
+            'j2-title': 'Unity / C# 게임 개발자', 'j2-desc': 'Unity 기반 게임 로직 및 AI 시스템 개발. 공포 게임 특화 경험이 있으면 우대합니다.',
+            'j3-title': 'AI · Python 개발자 인턴', 'j3-desc': 'Python 기반 AI 모듈 개발 및 백엔드 지원. 학생도 지원 가능하며 실무 경험을 쌓을 수 있습니다.',
+            'j4-title': '보안 · 언어 설계 협업자', 'j4-desc': 'Fëkìér 보안 언어 확장 개발 및 취약점 분석 협업. 컴파일러 이론 또는 보안 관심자 우대.',
+            'j5-title': '아이디어 기획자', 'j5-desc': '새로운 서비스·콘텐츠 아이디어를 발굴하고 기획서로 구체화하는 역할. 창의적인 사고와 UX 감각을 지닌 분을 찾습니다.',
+            'perks-tag': 'Why Join Us', 'perks-title': '함께하면 좋은 이유',
+            'p1-title': '실전 경험', 'p1-desc': '실제 클라이언트 프로젝트에 바로 투입됩니다. 포트폴리오가 빠르게 쌓입니다.',
+            'p2-title': '자율적인 환경', 'p2-desc': '출퇴근 없이 원격으로 진행합니다. 결과로 말하는 문화를 지향합니다.',
+            'p3-title': '기술 성장', 'p3-desc': 'AI, 게임, 보안, 3D 웹까지 다양한 기술 스택을 직접 다루며 성장합니다.',
+            'p4-title': '평등한 소통', 'p4-desc': '직급 없이 아이디어로 소통합니다. 좋은 아이디어라면 누구든 반영됩니다.',
+            'p5-title': '정식 채용 연계', 'p5-desc': '함께 일한 분들은 팀 성장 시 정식 멤버로 우선 합류합니다.',
+            'p6-title': '명확한 목표', 'p6-desc': '매 프로젝트마다 명확한 목표와 역할. 흐지부지되는 일이 없습니다.',
+            'apply-tag': 'Apply Now', 'apply-title': '지원하기',
+            'apply-form-title': '함께하고 싶으신가요?', 'apply-form-sub': '포지션에 상관없이 관심 있다면 언제든 연락주세요. 모든 지원서를 검토합니다.',
+            'apply-position-label': '지원 포지션',
+            'apply-opt1': '웹 프론트엔드 개발자', 'apply-opt2': 'Unity / C# 게임 개발자', 'apply-opt3': 'AI · Python 인턴',
+            'apply-opt4': '보안 · 언어 설계 협업', 'apply-opt5': '기타 (자유 지원)', 'apply-opt6': '아이디어 기획자',
+            'apply-portfolio-label': '포트폴리오 / GitHub (선택)',
+            'apply-intro-label': '자기소개',
+            'apply-submit': '지원서 제출하기 →', 'apply-note': '모든 지원서를 검토하며 5일 이내 연락드립니다.',
+        },
+        en: {
+            badge: 'AI + Web Studio · Since 2024',
+            'hero-h1-line2': 'INNOVATION',
+            'hero-desc': 'Breaking technical limits with creativity,<br>building a new digital world through AI and Web.',
+            'btn-services': 'View Services',
+            'btn-contact': 'Free Consultation',
+            stat1: 'Projects Done', stat2: 'Core Domains', stat3: 'Creative Potential', stat4: 'Tech Support',
+            'expertise-title': 'Beyond technology,\nwe design experience.',
+            'expertise-sub': 'Setting new standards in digital experience across three core domains.',
+            'exp1-title': 'Game Logic', 'exp1-desc': 'High-performance engine optimization in Unity & C# and immersive horror game system design. Maximizing player experience with AI modules.',
+            'exp2-title': 'Web Voxel', 'exp2-desc': 'Browser-based voxel engine prototyping and 3D web rendering using HTML/JS. Expanding the boundaries of the web.',
+            'exp3-title': 'Forensics', 'exp3-desc': 'Technical security solutions via custom language Fëkìér design. Protecting code at its deepest layer.',
+            'stack-title': 'Not tools,\nbut weapons.',
+            'works-title': 'Featured Works', 'works-more': 'View All →',
+            'proj1-title': 'AI Horror Game Logic', 'proj1-desc': 'A practical game logic combining AI modules that analyze player behavior to induce tension with an advanced timer UI system.',
+            'proj2-title': 'Browser Voxel Engine', 'proj2-desc': 'A 3D voxel engine prototype running in real-time in the browser.',
+            'proj3-title': 'Security Language Design', 'proj3-desc': 'Design and prototype implementation of the custom security language Fëkìér.',
+            'process-title': 'How We Work',
+            'step1-title': 'Consult & Plan', 'step1-desc': 'Consultation is possible even at the idea stage. We organize goals and requirements and propose the optimal technical direction.',
+            'step2-title': 'Design & Prototype', 'step2-desc': 'From architecture design to UI/UX prototypes, we plan in detail.',
+            'step3-title': 'Develop & Build', 'step3-desc': 'We develop high-performance results with the latest tech stack. Progress is shared in real-time.',
+            'step4-title': 'Deploy & Maintain', 'step4-desc': 'After completion, we provide free support for technical issues or minor edits for a set period.',
+            'faq-title': 'Frequently Asked Questions',
+            'faq1-q': 'How long does production take?', 'faq1-a': 'About 1 week for landing pages, and 3-4 weeks for complex AI-integrated projects.',
+            'faq2-q': 'Do you provide maintenance?', 'faq2-a': 'Yes, we offer free support for technical issues or minor edits after completion.',
+            'faq3-q': 'Can I request without a detailed plan?', 'faq3-a': 'Yes, we provide planning and technical proposals based on your initial ideas.',
+            'faq4-q': 'What are the development costs?', 'faq4-a': 'Basic sites are often free, but large-scale projects are determined after separate consultation.',
+            'faq5-q': 'What are the hiring criteria?', 'faq5-a': 'We prioritize experienced individuals, including those we have collaborated with before.',
+            'faq6-q': 'What kind of sites do you build?', 'faq6-a': 'We build everything from general websites to interactive, game-like experiences.',
+            'cta-title': 'Have an idea?\nStart now.', 'cta-sub': 'No matter what stage you\'re at, we start with a free consultation.', 'cta-btn': 'Request Free Consultation',
+            'services-h1-line2': 'SERVICES', 'services-sub': 'From game logic to web development and security solutions —\nall technical domains under one roof.',
+            'svc1-title': 'Website &\nLanding Page', 'svc1-desc': 'We create high-quality websites tailored to your purpose. Portfolios, service introductions, e-commerce and more, with responsive design and modern web technologies.',
+            'svc2-title': 'Game Logic &\nAI Systems', 'svc2-desc': 'We design high-performance game logic based on Unity and C#. From immersive horror AI to complex timer systems and player behavior analysis modules.',
+            'svc3-title': 'Browser 3D &\nInteractive', 'svc3-desc': 'We build 3D voxel engines and interactive experiences that run in the browser using WebGL and vanilla JavaScript.',
+            'svc4-title': 'Security Solutions &\nFëkìér', 'svc4-desc': 'We provide technical security solutions through our custom-developed language Fëkìér. Security embedded from code level to system design.',
+            'svc-cta-title': 'Have a service in mind?', 'svc-cta-sub': 'Start your project with a free consultation now.',
+            'contact-title': "Let's build\ntogether.", 'contact-sub': "It doesn't matter what stage you're at. Contact us if you have an idea.",
+            'contact-response-label': 'Avg. Response Time', 'contact-response-val': 'Within 24 hours',
+            'form-name': 'Name', 'form-email': 'Email', 'form-service': 'Service Type', 'form-select': 'Select an option',
+            'form-opt1': 'Website Development', 'form-opt2': 'Game Logic', 'form-opt3': '3D Web / Interactive', 'form-opt4': 'Security Solutions', 'form-opt5': 'Other',
+            'form-msg': 'Project Details', 'form-submit': 'Send Message →', 'form-note': 'Free consultation · Reply within 24h',
+            'team-tag': 'Who We Are',
+            'team-title': 'Our Passionate\nTeam',
+            'team-sub': 'Building limitless digital experiences with technology and creativity.',
+            'm1-name': 'Marst', 'm1-role': 'Founder · Lead Developer',
+            'm1-bio': 'Studio founder. Leads everything from AI game logic and security language Fëkìér design to 3D web engines.',
+            'values-tag': 'Our Values', 'values-title': 'How We Work',
+            'v1-title': 'Move Fast', 'v1-desc': 'Quick attempts over perfect plans. Build, test, improve.',
+            'v2-title': 'Go Deep', 'v2-desc': 'Not just the surface, but the essence. We dig into the deepest layer of technology.',
+            'v3-title': 'Be Transparent', 'v3-desc': 'We share progress honestly with both clients and teammates.',
+            'v4-title': 'Break Limits', 'v4-desc': 'Instead of "impossible", we ask "how can we do it?".',
+            'team-cta-title': 'Want to join the team?', 'team-cta-sub': 'We are looking for passionate developers.', 'team-cta-btn': 'View Open Positions',
+            'careers-tag': 'Join Marst AI',
+            'careers-h1-1': 'People to', 'careers-h1-2': 'Build With',
+            'careers-sub': 'We value passion over experience. Even more welcome if you have collaborated with us before.',
+            'jobs-tag': 'Open Positions', 'jobs-title': 'Job Openings',
+            'jtype-open': 'Open', 'jtype-intern': 'Internship', 'jtype-collab': 'Collaboration',
+            'j1-title': 'Web Frontend Developer', 'j1-desc': 'Develop interactive websites and landing pages. Looking for someone skilled in HTML/CSS/JS with a passion for beautiful UI.',
+            'j2-title': 'Unity / C# Game Developer', 'j2-desc': 'Develop game logic and AI systems with Unity. Preferred if you have horror game experience.',
+            'j3-title': 'AI · Python Developer Intern', 'j3-desc': 'Develop Python-based AI modules and support backend. Students welcome.',
+            'j4-title': 'Security · Language Design Collaborator', 'j4-desc': 'Expand Fëkìér and analyze vulnerabilities. Preferred if interested in compiler theory or security.',
+            'j5-title': 'Idea Planner', 'j5-desc': 'Discover new service/content ideas and turn them into concrete plans. Looking for creative thinkers with UX sensibility.',
+            'perks-tag': 'Why Join Us', 'perks-title': 'Why Work With Us',
+            'p1-title': 'Real Experience', 'p1-desc': 'Jump straight into real client projects. Your portfolio grows fast.',
+            'p2-title': 'Flexible Environment', 'p2-desc': 'Fully remote, no commute. A results-driven culture.',
+            'p3-title': 'Tech Growth', 'p3-desc': 'Work hands-on with AI, games, security, and 3D web technologies.',
+            'p4-title': 'Flat Communication', 'p4-desc': 'Ideas over titles. Good ideas from anyone get implemented.',
+            'p5-title': 'Full-time Pipeline', 'p5-desc': 'Collaborators are first in line when we grow the team.',
+            'p6-title': 'Clear Goals', 'p6-desc': 'Every project has clear goals and roles. No ambiguity.',
+            'apply-tag': 'Apply Now', 'apply-title': 'Apply',
+            'apply-form-title': 'Want to join us?', 'apply-form-sub': 'Reach out anytime, regardless of the position. We review every application.',
+            'apply-position-label': 'Position',
+            'apply-opt1': 'Web Frontend Developer', 'apply-opt2': 'Unity / C# Game Developer', 'apply-opt3': 'AI · Python Intern',
+            'apply-opt4': 'Security · Language Design', 'apply-opt5': 'Other (Open Application)', 'apply-opt6': 'Idea Planner',
+            'apply-portfolio-label': 'Portfolio / GitHub (optional)',
+            'apply-intro-label': 'Introduction',
+            'apply-submit': 'Submit Application →', 'apply-note': 'We review all applications and will contact you within 5 days.',
+        },
+        jp: {
+            badge: 'AI + Web Studio · Since 2024',
+            'hero-h1-line2': '創造力',
+            'hero-desc': '技術的限界を創造力で突破し、<br>AIとWebの融合で新たなデジタル世界を構築します。',
+            'btn-services': 'サービスを見る',
+            'btn-contact': '無料相談',
+            stat1: 'プロジェクト数', stat2: '主要技術領域', stat3: '無限の可能性', stat4: '技術サポート',
+            'expertise-title': '技術を超えて、\n体験を設計する。',
+            'expertise-sub': '3つの核心領域で独自の技術力によりデジタル体験の新基準を作ります。',
+            'exp1-title': 'Game Logic', 'exp1-desc': 'Unity & C#ベースの高性能エンジン最適化とホラーゲームの没入型システム設計。AIモジュールでプレイヤー体験を最大化します。',
+            'exp2-title': 'Web Voxel', 'exp2-desc': 'HTML/JSを活用したブラウザベースのボクセルエンジンのプロトタイプと3Dウェブレンダリング。',
+            'exp3-title': 'Forensics', 'exp3-desc': '独自言語Fëkìér設計による技術的セキュリティソリューション。コードの最深部まで保護します。',
+            'stack-title': 'ツールではなく、\n武器を扱う。',
+            'works-title': '主な作品', 'works-more': 'すべて見る →',
+            'proj1-title': 'AI Horror Game Logic', 'proj1-desc': 'プレイヤーの行動を分析して緊張感を誘発するAIモジュールと高度なタイマーUIの融合。',
+            'proj2-title': 'Browser Voxel Engine', 'proj2-desc': 'ブラウザでリアルタイムに動作する3Dボクセルエンジンのプロトタイプ。',
+            'proj3-title': 'Security Language Design', 'proj3-desc': '独自セキュリティ言語Fëkìérの設計とプロトタイプ実装。',
+            'process-title': 'プロジェクトの進め方',
+            'step1-title': '相談・企画', 'step1-desc': 'アイデア段階でも相談可能です。目標と要件をまとめ、最適な技術の方向性を提案します。',
+            'step2-title': '設計・デザイン', 'step2-desc': 'アーキテクチャ設計からUI/UXプロトタイプまで丁寧に構成します。',
+            'step3-title': '開発・実装', 'step3-desc': '最新技術スタックで高性能な成果物を開発します。進捗はリアルタイムで共有します。',
+            'step4-title': 'デプロイ・保守', 'step4-desc': '完了後も一定期間、技術的な問題や簡単な修正を無償で対応します。',
+            'faq-title': 'よくある質問',
+            'faq1-q': '制作期間はどのくらいですか？', 'faq1-a': '単純なページは約1週間、複雑なAI機能を含む場合は3〜4週間ほどです。',
+            'faq2-q': 'メンテナンスはありますか？', 'faq2-a': 'はい、一定期間は技術的な問題や簡単な修正を無償で対応します。',
+            'faq3-q': '企画がなくても大丈夫ですか？', 'faq3-a': 'はい、アイデアだけでも相談を通じて最適なプランをご提案します。',
+            'faq4-q': '開発費用はどのくらいですか？', 'faq4-a': '通常サイトは無料ですが、大規模プロジェクトは別途協議して決定します。',
+            'faq5-q': '採用基準は何ですか？', 'faq5-a': '経験者を対象としており、過去に共同開発した方も優先的に採用しています。',
+            'faq6-q': 'どのようなサイトを制作しますか？', 'faq6-a': '一般的なサイトからゲーム要素のあるサイトまで幅広く制作可能です。',
+            'cta-title': 'アイデアがあれば、\n今すぐ始めましょう。', 'cta-sub': 'どんな段階でも、無料相談から始めます。', 'cta-btn': '無料相談を申し込む',
+            'services-h1-line2': 'サービス', 'services-sub': 'ゲームロジックからWeb開発、セキュリティソリューションまで —\nすべての技術領域を一つのチームで解決します。',
+            'svc1-title': 'Webサイト &\nランディングページ', 'svc1-desc': '目的に合った高品質なWebサイトを制作します。ポートフォリオ、サービス紹介など様々な形態で制作可能です。',
+            'svc2-title': 'ゲームロジック &\nAIシステム', 'svc2-desc': 'UnityとC#ベースで高性能なゲームロジックを設計します。没入型ホラーAIや複雑なタイマーシステムまで開発します。',
+            'svc3-title': 'ブラウザ3D &\nインタラクティブ', 'svc3-desc': 'WebGLとJavaScriptでブラウザ上で動作する3Dボクセルエンジンとインタラクティブ体験を構築します。',
+            'svc4-title': 'セキュリティ &\nFëkìér', 'svc4-desc': '独自開発のFëkìér言語によるセキュリティソリューションを提供します。コードレベルからシステム設計までセキュリティを内在化します。',
+            'svc-cta-title': 'ご希望のサービスがありますか？', 'svc-cta-sub': '今すぐ無料相談でプロジェクトを始めましょう。',
+            'contact-title': '一緒に\n作りましょう。', 'contact-sub': 'どんな段階でも構いません。アイデアがあれば今すぐご連絡ください。',
+            'contact-response-label': '平均応答時間', 'contact-response-val': '24時間以内',
+            'form-name': 'お名前', 'form-email': 'メールアドレス', 'form-service': 'サービス種別', 'form-select': '選択してください',
+            'form-opt1': 'Webサイト制作', 'form-opt2': 'ゲームロジック', 'form-opt3': '3D Web / インタラクティブ', 'form-opt4': 'セキュリティ', 'form-opt5': 'その他',
+            'form-msg': 'プロジェクト内容', 'form-submit': '相談を申し込む →', 'form-note': '無料相談 · 24時間以内に返信',
+            'team-tag': 'チームについて',
+            'team-title': '情熱で動く\n私たちのチーム',
+            'team-sub': '技術と創造性を武器に、限界のないデジタル体験を作り続けます。',
+            'm1-name': 'Marst', 'm1-role': 'Founder · Lead Developer',
+            'm1-bio': 'スタジオ創業者。AIゲームロジック、セキュリティ言語Fëkìér設計、3DウェブエンジンまですべてをリードSします。',
+            'values-tag': '価値観', 'values-title': '私たちの働き方',
+            'v1-title': '素早い実行', 'v1-desc': '完璧な計画より素早い試み。作って、テストして、改善します。',
+            'v2-title': '深い探求', 'v2-desc': '表面ではなく本質まで。技術の最深部を掘り下げます。',
+            'v3-title': '透明な対話', 'v3-desc': 'クライアントとチームメンバー全員に進捗を正直に共有します。',
+            'v4-title': '限界を超える', 'v4-desc': '「不可能」の代わりに「どうすればできるか」と問います。',
+            'team-cta-title': 'チームに加わりたいですか？', 'team-cta-sub': '現在、情熱のある開発者を探しています。', 'team-cta-btn': '採用情報を見る',
+            'careers-tag': 'Marst AIに参加',
+            'careers-h1-1': '一緒に作る', 'careers-h1-2': '仲間を探しています',
+            'careers-sub': '経験より情熱を重視します。共同開発経験があればさらに歓迎します。',
+            'jobs-tag': '募集ポジション', 'jobs-title': '採用情報',
+            'jtype-open': '募集中', 'jtype-intern': 'インターン', 'jtype-collab': 'コラボ',
+            'j1-title': 'Webフロントエンドエンジニア', 'j1-desc': 'インタラクティブなWebサイトとランディングページの開発。HTML/CSS/JSに精通し、美しいUIに関心のある方を探しています。',
+            'j2-title': 'Unity / C# ゲーム開発者', 'j2-desc': 'UnityベースのゲームロジックとAIシステム開発。ホラーゲーム経験者優遇。',
+            'j3-title': 'AI · Pythonエンジニアインターン', 'j3-desc': 'PythonベースのAIモジュール開発とバックエンドサポート。学生も応募可。',
+            'j4-title': 'セキュリティ · 言語設計コラボ', 'j4-desc': 'Fëkìér言語の拡張と脆弱性分析の協力。コンパイラ理論やセキュリティに興味のある方優遇。',
+            'j5-title': 'アイデアプランナー', 'j5-desc': '新しいサービス・コンテンツのアイデアを発掘し企画書にまとめる役割。創造的な思考とUXセンスをお持ちの方を探しています。',
+            'perks-tag': '参加する理由', 'perks-title': '一緒に働く魅力',
+            'p1-title': '実務経験', 'p1-desc': 'すぐに実際のクライアントプロジェクトに参加できます。ポートフォリオが早く充実します。',
+            'p2-title': '自由な環境', 'p2-desc': '通勤不要のリモートワーク。成果で話す文化です。',
+            'p3-title': '技術成長', 'p3-desc': 'AI、ゲーム、セキュリティ、3D Webなど多様な技術スタックを直接扱いながら成長します。',
+            'p4-title': 'フラットなコミュニケーション', 'p4-desc': '役職なし、アイデアで対話します。良いアイデアは誰のものでも採用されます。',
+            'p5-title': '正式採用への道', 'p5-desc': '共に働いた方はチーム拡大時に優先的に正式メンバーとして参加できます。',
+            'p6-title': '明確な目標', 'p6-desc': 'プロジェクトごとに明確な目標と役割があります。曖昧なことはありません。',
+            'apply-tag': '今すぐ応募', 'apply-title': '応募する',
+            'apply-form-title': '一緒に取り組みませんか？', 'apply-form-sub': 'ポジションに関わらず、興味があればいつでもご連絡ください。すべての応募書類を確認します。',
+            'apply-position-label': '応募ポジション',
+            'apply-opt1': 'Webフロントエンドエンジニア', 'apply-opt2': 'Unity / C# ゲーム開発者', 'apply-opt3': 'AI · Pythonインターン',
+            'apply-opt4': 'セキュリティ · 言語設計', 'apply-opt5': 'その他（自由応募）', 'apply-opt6': 'アイデアプランナー',
+            'apply-portfolio-label': 'ポートフォリオ / GitHub（任意）',
+            'apply-intro-label': '自己紹介',
+            'apply-submit': '応募書類を提出する →', 'apply-note': 'すべての応募書類を確認し、5日以内にご連絡します。',
+        }
+    };
+
+    function applyLang(lang) {
+        currentLang = lang;
+        const t = i18n[lang];
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (t[key] !== undefined) {
+                if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                    // placeholder handled separately if needed
+                } else if (el.innerHTML.includes('<br>') || t[key].includes('<br>')) {
+                    el.innerHTML = t[key];
+                } else {
+                    el.textContent = t[key];
+                }
+            }
+        });
+        document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.lang-btn').forEach(b => {
+            if (b.textContent.trim().toLowerCase() === lang) b.classList.add('active');
+        });
+    }
+
+    function setLang(lang) { applyLang(lang); }
+
+    // ===== APPLY FORM SUBMIT =====
+    async function submitApply() {
+        const name      = (document.getElementById('apply-name')?.value || '').trim();
+        const email     = (document.getElementById('apply-email')?.value || '').trim();
+        const posEl     = document.getElementById('apply-position');
+        const position  = posEl ? posEl.options[posEl.selectedIndex].text : '';
+        const portfolio = (document.getElementById('apply-portfolio')?.value || '').trim();
+        const intro     = (document.getElementById('apply-intro')?.value || '').trim();
+
+        // ── 유효성 검사 ──
+        const msgs = { ko: '이름과 이메일을 입력해주세요.', en: 'Please enter your name and email.', jp: 'お名前とメールアドレスを入力してください。' };
+        if (!name || !email) { alert(msgs[currentLang]); return; }
+
+        const btn  = document.querySelector('#apply-section .btn-primary');
+        const span = btn?.querySelector('span');
+
+        // ── 로딩 상태 ──
+        if (span) span.textContent = '전송 중...';
+        if (btn)  btn.style.opacity = '0.6';
+
+        try {
+            await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_APPLY, {
+                applicant_name:      name,
+                applicant_email:     email,
+                applied_position:    position,
+                portfolio_url:       portfolio || '(미입력)',
+                self_introduction:   intro     || '(미입력)',
+                reply_to:            email,
+            });
+
+            // ── 성공 ──
+            if (span) span.textContent = '✓ 지원서 제출 완료!';
+            if (btn)  { btn.style.opacity = '1'; btn.style.background = 'linear-gradient(135deg,#10b981,#059669)'; }
+
+            // 폼 초기화
+            ['apply-name','apply-email','apply-portfolio','apply-intro'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.value = '';
+            });
+            if (posEl) posEl.selectedIndex = 0;
+
+            setTimeout(() => {
+                if (span) { span.setAttribute('data-i18n','apply-submit'); applyLang(currentLang); }
+                if (btn)  btn.style.background = '';
+            }, 4000);
+
+        } catch (err) {
+            console.error('EmailJS error:', err);
+            // ── 실패 시 mailto 폴백 ──
+            if (span) span.textContent = '메일 앱으로 전송...';
+            if (btn)  btn.style.opacity = '1';
+            const subject = encodeURIComponent('[Marst AI 지원] ' + position);
+            const body    = encodeURIComponent(
+                '이름: ' + name + '\n이메일: ' + email +
+                '\n지원 포지션: ' + position +
+                '\n포트폴리오: ' + (portfolio || '없음') +
+                '\n\n자기소개:\n' + intro
+            );
+            window.location.href = 'mailto:marstaiwebstudio@gmail.com?subject=' + subject + '&body=' + body;
+        }
+    }
+
+    // ===== LOADING SCREEN =====
+    (function() {
+        document.body.style.overflow = 'hidden';
+        // Dismiss after ~2.6s (bar animation ends at ~2.6s)
+        setTimeout(function() {
+            var ls = document.getElementById('loading-screen');
+            if (ls) {
+                ls.classList.add('hide');
+                document.body.style.overflow = '';
+                // Remove from DOM after transition
+                setTimeout(function() { ls.style.display = 'none'; }, 700);
+            }
+        }, 2600);
+    })();
+
+    // ===== BACK TO TOP =====
+    (function() {
+        var btn = document.getElementById('back-to-top');
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 300) {
+                btn.classList.add('show');
+            } else {
+                btn.classList.remove('show');
+            }
+        });
+        btn.addEventListener('click', function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    })();
+
+    // Init
+    window.addEventListener('load', () => {
+        triggerReveal();
+        applyLang('ko');
+    });
+    </script>
+</body>
+</html>
